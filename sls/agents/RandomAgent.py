@@ -1,11 +1,13 @@
 from sls.agents import AbstractAgent
 import numpy as np
+import tensorflow as tf
 
 
 class RandomAgent(AbstractAgent):
 
     def __init__(self, train, screen_size):
         super(RandomAgent, self).__init__(screen_size)
+
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
