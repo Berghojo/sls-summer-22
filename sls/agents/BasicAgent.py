@@ -23,7 +23,7 @@ class BasicAgent(AbstractAgent):
                 if vector[0] == value[0] and vector[1] == value[1]:
                     d = key
                     return self._dir_to_sc2_action(d, marine_coords)
-                return self._SELECT_ARMY
+            return self._SELECT_ARMY
         else:
             return self._SELECT_ARMY
 
