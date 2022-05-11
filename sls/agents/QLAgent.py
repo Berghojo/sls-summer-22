@@ -1,6 +1,7 @@
 import random
-
+import datetime
 from sls.agents import AbstractAgent
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -69,8 +70,10 @@ class QLAgent(AbstractAgent):
             self.last_action = None
             self.last_state = None
 
-    def save_model(self, filename):
-        pass
+    def save_model(self, path):
+        filename = path + f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_q_table.pkl'
+        self.q_table.to_pickle(filename)
+        print('saved')
 
     def load_model(self, filename):
         pass

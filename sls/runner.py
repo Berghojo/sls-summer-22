@@ -14,7 +14,7 @@ class Runner:
         self.score_batch = []
         self.score = 0  # store for the scores of an episode
         self.episode = 1  # episode counter
-
+        self.path_model = './models/'
         self.path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
                     + ('_train_' if self.train else 'run_') \
                     + type(agent).__name__
@@ -53,7 +53,7 @@ class Runner:
         # with self.writer.as_default():
         #     tf.summary.scalar('Score per Episode', self.score, step=self.episode)
         if self.train and self.episode % 10 == 0:
-            self.agent.save_model(self.path)
+            self.agent.save_model(self.path_model)
             try:
                 self.agent.update_target_model()
             except AttributeError:
