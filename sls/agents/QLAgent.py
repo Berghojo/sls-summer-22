@@ -20,7 +20,7 @@ class QLAgent(AbstractAgent):
         self.last_action = None
         self.alpha = 0.1
         self.lamb = 0.9
-        self.q_table = pd.DataFrame(0, index=index, columns= self._DIRECTIONS.keys())
+        self.q_table = pd.DataFrame(0.0, index=index, columns= self._DIRECTIONS.keys())
         print(self.q_table)
 
     def step(self, obs):
