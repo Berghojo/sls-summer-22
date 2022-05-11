@@ -3,7 +3,7 @@ from sls import Env, Runner
 from sls.agents import *
 
 _CONFIG = dict(
-    episodes=100,
+    episodes=500,
     screen_size=64,
     minimap_size=64,
     visualize=True,

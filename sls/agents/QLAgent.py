@@ -10,13 +10,14 @@ class QLAgent(AbstractAgent):
 
     def __init__(self, train, screen_size):
         super(QLAgent, self).__init__(screen_size)
-        self.state_space = 8
-        index = [f'{i} {e}' for i in range(-self.state_space, self.state_space+1)
-                 for e in range(-self.state_space, self.state_space+1)]
+        self.state_space = 2
+        self.index_values = int(screen_size / self.state_space)
+        index = [f'{i} {e}' for i in range(-self.index_values, self.index_values+1)
+                 for e in range(-self.index_values, self.index_values+1)]
         self.epsilon = 0.99
         self.last_state = None
         self.last_action = None
-        self.alpha = 0.5
+        self.alpha = 0.1
         self.lamb = 0.9
         self.q_table = pd.DataFrame(0, index=index, columns= self._DIRECTIONS.keys())
         print(self.q_table)
@@ -36,6 +37,8 @@ class QLAgent(AbstractAgent):
                 state = [0, 0]
 
             state_string = f'{state[0]} {state[1]}'
+            if state_string == self.last_state:
+                print('no transition')
             directions = self.q_table[self.q_table.index == state_string]
             direction = directions.idxmax(axis=1)[0]
             if self.last_state:
@@ -52,9 +55,10 @@ class QLAgent(AbstractAgent):
 
     def update_q_table(self, directions, obs):
         if obs.reward != 1 and not obs.last():
-            self.q_table.at[self.last_state, self.last_action] += self.alpha * \
-                                                               (self.lamb * directions.max(axis=1) -
-                                                                self.q_table.at[self.last_state, self.last_action])
+            value = self.alpha * (self.lamb * directions.max(axis=1)[0] -
+                                  self.q_table.at[self.last_state, self.last_action])
+            self.q_table.at[self.last_state, self.last_action] += value
+
         else:
             self.q_table.at[self.last_state, self.last_action] += self.alpha * \
                                                                (obs.reward -
