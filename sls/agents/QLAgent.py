@@ -51,6 +51,15 @@ class QLAgent(AbstractAgent):
             print('no transition')
         return state_string
 
+    def update_epsilon(self, episodes):
+
+        self.epsilon -= 1/(episodes-100)
+        if self.epsilon < 0.01:
+            self.epsilon = 0
+
+    def get_epsilon(self):
+        return self.epsilon
+
     def save_model(self, path):
         self.qtable.save_qtable(path)
 
