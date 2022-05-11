@@ -70,6 +70,15 @@ class QLAgent(AbstractAgent):
             self.last_action = None
             self.last_state = None
 
+    def update_epsilon(self, episodes):
+
+        self.epsilon -= 1/(episodes-100)
+        if self.epsilon < 0.01:
+            self.epsilon = 0
+
+    def get_epsilon(self):
+        return self.epsilon
+
     def save_model(self, path):
         filename = path + f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_q_table.pkl'
         self.q_table.to_pickle(filename)
