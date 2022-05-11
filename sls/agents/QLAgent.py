@@ -1,3 +1,5 @@
+import random
+
 from sls.agents import AbstractAgent
 import numpy as np
 import pandas as pd
@@ -9,9 +11,13 @@ class QLAgent(AbstractAgent):
     def __init__(self, train, screen_size):
         super(QLAgent, self).__init__(screen_size)
         self.state_space = 8
-        index = [f'{i} {e}' for i in range(-self.state_space, self.state_space)
-                 for e in range(-self.state_space, self.state_space)]
-
+        index = [f'{i} {e}' for i in range(-self.state_space, self.state_space+1)
+                 for e in range(-self.state_space, self.state_space+1)]
+        self.epsilon = 0.99
+        self.last_state = None
+        self.last_action = None
+        self.alpha = 0.5
+        self.lamb = 0.9
         self.q_table = pd.DataFrame(0, index=index, columns= self._DIRECTIONS.keys())
         print(self.q_table)
 
@@ -25,12 +31,36 @@ class QLAgent(AbstractAgent):
             beacon_coords = self._get_unit_pos(beacon)
             distance = beacon_coords - marine_coords
             state = (distance / self.state_space).astype(int)
-            direction = self.q_table[f'{state[0]} {state[1]}']
-            print(direction)
+            state = [el + 1 if el >= 0 else el for el in state]
+            if obs.reward != 0:
+                state = [0, 0]
 
-            return self._SELECT_ARMY
+            state_string = f'{state[0]} {state[1]}'
+            directions = self.q_table[self.q_table.index == state_string]
+            direction = directions.idxmax(axis=1)[0]
+            if self.last_state:
+                self.update_q_table(directions, obs)
+            if random.uniform(0, 1) <= self.epsilon:
+                direction = random.choice(list(self._DIRECTIONS.keys()))
+
+            self.last_action = direction
+            self.last_state = state_string
+
+            return self._dir_to_sc2_action(direction, marine_coords)
         else:
             return self._SELECT_ARMY
+
+    def update_q_table(self, directions, obs):
+        if obs.reward != 1 and not obs.last():
+            self.q_table.at[self.last_state, self.last_action] += self.alpha * \
+                                                               (self.lamb * directions.max(axis=1) -
+                                                                self.q_table.at[self.last_state, self.last_action])
+        else:
+            self.q_table.at[self.last_state, self.last_action] += self.alpha * \
+                                                               (obs.reward -
+                                                                self.q_table.at[self.last_state, self.last_action])
+            self.last_action = None
+            self.last_state = None
 
     def save_model(self, filename):
         pass
