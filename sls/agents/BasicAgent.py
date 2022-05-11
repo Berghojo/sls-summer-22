@@ -18,12 +18,11 @@ class BasicAgent(AbstractAgent):
             beacon_coords = self._get_unit_pos(beacon)
             vector = beacon_coords - marine_coords
             vector = np.sign(vector)
-            try:
-                for key, value in self._DIRECTIONS.items():
-                    if vector[0] == value[0] and vector[1] == value[1]:
-                        d = key
-                        return self._dir_to_sc2_action(d, marine_coords)
-            except:
+
+            for key, value in self._DIRECTIONS.items():
+                if vector[0] == value[0] and vector[1] == value[1]:
+                    d = key
+                    return self._dir_to_sc2_action(d, marine_coords)
                 return self._SELECT_ARMY
         else:
             return self._SELECT_ARMY
