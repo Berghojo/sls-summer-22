@@ -4,11 +4,11 @@ from sls.agents import *
 
 _CONFIG = dict(
     episodes=100,
-    screen_size=32,
-    minimap_size=32,
+    screen_size=64,
+    minimap_size=64,
     visualize=True,
     train=True,
-    agent=RandomAgent,
+    agent=BasicAgent,
     load_path='./graphs/...'
 )
 
