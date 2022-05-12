@@ -11,17 +11,16 @@ class QLAgent(AbstractAgent):
         self.train = train
         self.last_state = None
         self.last_action = None
-        self.qtable = QLTable(self._DIRECTIONS, screen_size)
+        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0)
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
             marine = self._get_marine(obs)
             beacon = self._get_beacon(obs)
-            marine_coords = self._get_unit_pos(marine)
+            marine_coords = self._get_unit_pos(marine) # walks in 3px steps
             beacon_coords = self._get_unit_pos(beacon)
             if marine is None:
                 return self._NO_OP
-
 
             state = self.get_state(marine_coords, beacon_coords, obs)
             direction = self.qtable.choose_action(state)
@@ -47,18 +46,9 @@ class QLAgent(AbstractAgent):
         if obs.reward != 0:
             state_string = 'target'
 
-        if state_string == self.last_state:
-            print('no transition')
+        #if state_string == self.last_state:
+        #    print('no transition')
         return state_string
-
-    def update_epsilon(self, episodes):
-
-        self.epsilon -= 1/(episodes-100)
-        if self.epsilon < 0.01:
-            self.epsilon = 0
-
-    def get_epsilon(self):
-        return self.epsilon
 
     def save_model(self, path):
         self.qtable.save_qtable(path)
@@ -67,7 +57,11 @@ class QLAgent(AbstractAgent):
         self.qtable.load_qtable(filename)
 
     def update_epsilon(self, episodes):
-        self.qtable.epsilon -= 1.0/episodes
+        epsilon = self.qtable.epsilon - (1 / (episodes - 100))
+        if epsilon < 0.001:
+            epsilon = 0.0
+        #update epsilon
+        self.qtable.epsilon = epsilon
 
     def get_epsilon(self):
         return self.qtable.epsilon

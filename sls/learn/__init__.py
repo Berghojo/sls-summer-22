@@ -1,1 +1,1 @@
-from .QLTable import QLearnTable
+from .QLTable import QLTable
