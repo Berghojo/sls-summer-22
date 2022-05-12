@@ -50,9 +50,8 @@ class QTableLearn:
         state_string = f'{state[0]} {state[1]}'
         if obs.reward != 0:
             state_string = 'target'
-
-        if state_string == self.last_state:
-            print('no transition')
+        # if state_string == self.last_state:
+        #     print('no transition')
         return marine_coords, state_string
 
     def save_qtable(self):

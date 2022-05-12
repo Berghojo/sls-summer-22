@@ -16,11 +16,18 @@ class QLAgent(AbstractAgent):
         index = [f'{i} {e}' for i in range(-self.index_values, self.index_values+1)
                  for e in range(-self.index_values, self.index_values+1)]
         self.epsilon = 1
+        self.train = train
         self.last_state = None
         self.last_action = None
         self.alpha = 0.1
+        self.file_stamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
         self.lamb = 0.9
-        self.q_table = pd.DataFrame(0.0, index=index, columns= self._DIRECTIONS.keys())
+        if train:
+            self.q_table = pd.DataFrame(1.0, index=index, columns= self._DIRECTIONS.keys())
+            self.epsilon = 1
+        else:
+            self.q_table = self.load_model('220512_0052_q_table.pkl')
+            self.epsilon = 0
         print(self.q_table)
 
     def step(self, obs):
@@ -31,8 +38,9 @@ class QLAgent(AbstractAgent):
                 return self._NO_OP
             marine_coords, state_string = self.get_state(beacon, marine, obs)
             directions = self.q_table[self.q_table.index == state_string]
+            directions = directions.iloc[:, np.random.permutation(8)]
             direction = directions.idxmax(axis=1)[0]
-            if self.last_state:
+            if self.last_state and self.train:
                 self.update_q_table(directions, obs)
             if random.uniform(0, 1) <= self.epsilon:
                 direction = random.choice(list(self._DIRECTIONS.keys()))
@@ -53,8 +61,8 @@ class QLAgent(AbstractAgent):
         if obs.reward != 0:
             state = [0, 0]
         state_string = f'{state[0]} {state[1]}'
-        if state_string == self.last_state:
-            print('no transition')
+        # if state_string == self.last_state:
+        #     print('no transition')
         return marine_coords, state_string
 
     def update_q_table(self, directions, obs):
@@ -62,7 +70,6 @@ class QLAgent(AbstractAgent):
             value = self.alpha * (self.lamb * directions.max(axis=1)[0] -
                                   self.q_table.at[self.last_state, self.last_action])
             self.q_table.at[self.last_state, self.last_action] += value
-
         else:
             self.q_table.at[self.last_state, self.last_action] += self.alpha * \
                                                                (obs.reward -
@@ -71,18 +78,17 @@ class QLAgent(AbstractAgent):
             self.last_state = None
 
     def update_epsilon(self, episodes):
-
-        self.epsilon -= 1/(episodes-100)
-        if self.epsilon < 0.01:
+        self.epsilon -= 1/(episodes-50)
+        if self.epsilon < 0.05:
             self.epsilon = 0
 
     def get_epsilon(self):
         return self.epsilon
 
     def save_model(self, path):
-        filename = path + f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_q_table.pkl'
+        filename = path + f'{self.file_stamp}_q_table.pkl'
         self.q_table.to_pickle(filename)
         print('saved')
 
     def load_model(self, filename):
-        pass
+        return pd.read_pickle('models/'+ filename)

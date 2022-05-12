@@ -25,8 +25,8 @@ class Runner:
         # Alle weiteren tf.summary Aufrufe müssen durch tf.compat.v1.summary tf.compat.v1.summary ersetzt werden
         self.writer = tf.compat.v1.summary.FileWriter(self.path, tf.compat.v1.get_default_graph())
 
-        if not self.train and load_path is not None and os.path.isdir(load_path):
-                self.agent.load_model(load_path)
+        # if not self.train and load_path is not None and os.path.isdir(load_path):
+        #         self.agent.load_model(load_path)
 
     def summarize(self):
         # self.writer.add_summary(tf.Summary(
@@ -49,6 +49,7 @@ class Runner:
         self.writer.add_summary(tf.compat.v1.Summary(
             value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),
                                 self.episode)
+        print('Epsilon: ', self.agent.get_epsilon())
 
         # with self.writer.as_default():
         #     tf.summary.scalar('Score per Episode', self.score, step=self.episode)
