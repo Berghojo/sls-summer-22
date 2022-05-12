@@ -23,7 +23,7 @@ class QLAgent(AbstractAgent):
         self.file_stamp = datetime.datetime.now().strftime("%y%m%d_%H%M")
         self.lamb = 0.9
         if train:
-            self.q_table = pd.DataFrame(1.0, index=index, columns= self._DIRECTIONS.keys())
+            self.q_table = pd.DataFrame(0, index=index, columns= self._DIRECTIONS.keys())
             self.epsilon = 1
         else:
             self.q_table = self.load_model('220512_0052_q_table.pkl')
