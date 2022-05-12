@@ -4,7 +4,6 @@ import os
 import numpy as np
 import tensorflow as tf
 
-
 class Runner:
     def __init__(self, agent, env, train, load_path):
         tf.compat.v1.disable_eager_execution()

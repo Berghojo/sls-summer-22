@@ -3,18 +3,17 @@ from sls import Env, Runner
 from sls.agents import *
 
 _CONFIG = dict(
-    episodes=750,
+    episodes=500,
     screen_size=64,
     minimap_size=64,
-    visualize=False,
-    train=True,
+    visualize=True,
+    train=False,
     agent=QLAgent,
     load_path='./graphs/...'
 )
 
 
 def main(unused_argv):
-
     agent = _CONFIG['agent'](
         train=_CONFIG['train'],
         screen_size=_CONFIG['screen_size']
