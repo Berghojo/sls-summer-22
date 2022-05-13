@@ -6,15 +6,14 @@ _CONFIG = dict(
     episodes=500,
     screen_size=64,
     minimap_size=64,
-    visualize=False,
+    visualize=True,
     train=False,
     agent=QLAgent,
-    load_path='./graphs/...'
+    load_path='./models/abgabe_q_table.pkl'
 )
 
 
 def main(unused_argv):
-
     agent = _CONFIG['agent'](
         train=_CONFIG['train'],
         screen_size=_CONFIG['screen_size']

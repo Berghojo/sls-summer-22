@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import tensorflow as tf
+from sls.agents import *
 
 
 class Runner:
@@ -20,13 +21,13 @@ class Runner:
                     + type(agent).__name__
 
         # Tensorflow 1.X
-        #self.writer = tf.summary.FileWriter(self.path, tf.get_default_graph())
+        # self.writer = tf.summary.FileWriter(self.path, tf.get_default_graph())
         # Tensorflow 2.X mit ausgeschalteter eager_execution
         # Alle weiteren tf.summary Aufrufe müssen durch tf.compat.v1.summary tf.compat.v1.summary ersetzt werden
         self.writer = tf.compat.v1.summary.FileWriter(self.path, tf.compat.v1.get_default_graph())
-
-        # if not self.train and load_path is not None and os.path.isdir(load_path):
-        #         self.agent.load_model(load_path)
+        ospath = os.path.isfile(load_path)
+        if not self.train and load_path is not None and os.path.isfile(load_path):
+            self.agent.load_model(load_path)
 
     def summarize(self):
         # self.writer.add_summary(tf.Summary(
@@ -41,15 +42,15 @@ class Runner:
             mean = np.mean(self.score_batch)
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag='Average (50) score', simple_value=mean)]),
-                self.episode)
+                    self.episode)
             print('Mean Score(50): ', mean)
         self.writer.add_summary(tf.compat.v1.Summary(
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
-                                self.episode)
-        self.writer.add_summary(tf.compat.v1.Summary(
-            value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),
-                                self.episode)
-        print('Epsilon: ', self.agent.get_epsilon())
+                self.episode)
+        if isinstance(self.agent, QLAgent):
+            self.writer.add_summary(tf.compat.v1.Summary(
+                value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),
+                self.episode)
 
         # with self.writer.as_default():
         #     tf.summary.scalar('Score per Episode', self.score, step=self.episode)
@@ -68,7 +69,8 @@ class Runner:
             while True:
                 action = self.agent.step(obs)
                 if obs.last():
-                    self.agent.update_epsilon(episodes)
+                    if isinstance(self.agent, QLAgent):
+                        self.agent.update_epsilon(episodes)
                     break
                 obs = self.env.step(action)
                 self.score += obs.reward
