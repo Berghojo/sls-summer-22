@@ -23,8 +23,8 @@ class QLTable:
     def choose_action(self, s):
         self.check_state_exist(s)
         if np.random.uniform(0, 1) > self.epsilon:
-            # choose best action
-            action = self.q_table.loc[s].idxmax() #todo: moves always NW for multiple solutions
+            # choose best action (random selection if multiple solutions)
+            action = self.q_table.loc[s].iloc[np.random.permutation(len(self.actions))].idxmax()
         else:
             # choose random action
             action = np.random.choice(list(self.actions.keys()))
@@ -35,7 +35,7 @@ class QLTable:
         self.check_state_exist(s)
         self.check_state_exist(s_new)
         if s_new != 'target':
-            value = self.alpha * (self.gama * self.q_table.loc[s].max() - self.q_table.at[s, a])
+            value = self.alpha * (self.gama * self.q_table.loc[s_new].max() - self.q_table.at[s, a])
         else:
             value = self.alpha * (obs.reward - self.q_table.at[s, a])
 

@@ -28,12 +28,12 @@ class QLAgent(AbstractAgent):
             if self.last_state:
                 self.qtable.learn(self.last_state, self.last_action, state, obs)
 
-            self.last_action = direction
-            self.last_state = state
-
-            if self.last_state == 'target':
+            if state == 'target':
                 self.last_action = None
                 self.last_state = None
+            else:
+                self.last_action = direction
+                self.last_state = state
 
             return self._dir_to_sc2_action(direction, marine_coords)
         else:
