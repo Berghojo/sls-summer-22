@@ -25,7 +25,7 @@ class QLAgent(AbstractAgent):
             state = self.get_state(marine_coords, beacon_coords, obs)
             direction = self.qtable.choose_action(state)
 
-            if self.last_state & self.train:
+            if self.last_state and self.train:
                 self.qtable.learn(self.last_state, self.last_action, state, obs)
 
             if state == 'target' or obs.last():

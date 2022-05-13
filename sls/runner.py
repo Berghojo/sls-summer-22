@@ -25,8 +25,8 @@ class Runner:
         # Tensorflow 2.X mit ausgeschalteter eager_execution
         # Alle weiteren tf.summary Aufrufe müssen durch tf.compat.v1.summary tf.compat.v1.summary ersetzt werden
         self.writer = tf.compat.v1.summary.FileWriter(self.path, tf.compat.v1.get_default_graph())
-
-        if not self.train and load_path is not None and os.path.isdir(load_path):
+        ospath = os.path.isfile(load_path)
+        if not self.train and load_path is not None and os.path.isfile(load_path):
             self.agent.load_model(load_path)
 
     def summarize(self):

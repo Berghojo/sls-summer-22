@@ -2,3 +2,5 @@ __pycache__/
 .idea/
 .models/
 .graphs/
+sls/models/
+sls/graphs/
