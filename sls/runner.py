@@ -42,11 +42,11 @@ class Runner:
             mean = np.mean(self.score_batch)
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag='Average (50) score', simple_value=mean)]),
-                self.episode)
+                    self.episode)
             print('Mean Score(50): ', mean)
         self.writer.add_summary(tf.compat.v1.Summary(
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
-            self.episode)
+                self.episode)
         if isinstance(self.agent, QLAgent):
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),

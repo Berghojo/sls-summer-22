@@ -6,14 +6,14 @@ import datetime
 
 class QLTable:
 
-    def __init__(self, actions, screen_size, table_init):
+    def __init__(self, actions, screen_size, table_init, epsilon):
         self.state_space = 2
         self.index_values = int(screen_size / self.state_space)
         index = [f'{i} {e}' for i in range(-self.index_values, self.index_values + 1)
                  for e in range(-self.index_values, self.index_values + 1)] + ['target']
 
         self.actions = actions
-        self.epsilon = 1.0
+        self.epsilon = epsilon
         self.alpha = 0.1
         self.gama = 0.9
         self.q_table = pd.DataFrame(table_init, index=index, columns=self.actions.keys())
@@ -35,7 +35,7 @@ class QLTable:
         self.check_state_exist(s)
         self.check_state_exist(s_new)
         if s_new != 'target':
-            value = self.alpha * (self.gama * self.q_table.loc[s_new].max() - self.q_table.at[s, a])
+            value = self.alpha * (obs.reward + self.gama * self.q_table.loc[s_new].max() - self.q_table.at[s, a])
         else:
             value = self.alpha * (obs.reward - self.q_table.at[s, a])
 
@@ -45,9 +45,6 @@ class QLTable:
     def check_state_exist(self, state):
         if state not in self.q_table.index:
             print("index missing: " + state)
-            # append new state to q table
-            #self.q_table = pd.concat([self.q_table,
-             #   pd.Series([0] * len(self.actions), index=self.q_table.columns, name=state)],axis=0)
 
     def save_qtable(self, path):
         filename = path + self.exportfile

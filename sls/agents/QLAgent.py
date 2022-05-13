@@ -11,7 +11,7 @@ class QLAgent(AbstractAgent):
         self.train = train
         self.last_state = None
         self.last_action = None
-        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0)
+        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0, 1.0 if train else 0)
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
@@ -25,10 +25,10 @@ class QLAgent(AbstractAgent):
             state = self.get_state(marine_coords, beacon_coords, obs)
             direction = self.qtable.choose_action(state)
 
-            if self.last_state:
+            if self.last_state & self.train:
                 self.qtable.learn(self.last_state, self.last_action, state, obs)
 
-            if state == 'target':
+            if state == 'target' or obs.last():
                 self.last_action = None
                 self.last_state = None
             else:
