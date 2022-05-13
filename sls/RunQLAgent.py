@@ -9,7 +9,7 @@ _CONFIG = dict(
     visualize=True,
     train=False,
     agent=QLAgent,
-    load_path='./models/abgabe_q_table.pkl'
+    load_path='models/abgabe_blatt01_aufgabe06_q_table.pkl'
 )
 
 
