@@ -42,6 +42,17 @@ class QLTable:
         # update table
         self.q_table.at[s, a] += value
 
+    def learn_sarsa(self, s, a, s_new, obs, a_new):
+        self.check_state_exist(s)
+        self.check_state_exist(s_new)
+        if s_new != 'target':
+            value = self.alpha * (obs.reward + self.gama * self.q_table.at[s_new, a_new] - self.q_table.at[s, a])
+        else:
+            value = self.alpha * (obs.reward - self.q_table.at[s, a])
+
+        # update table
+        self.q_table.at[s, a] += value
+
     def check_state_exist(self, state):
         if state not in self.q_table.index:
             print("index missing: " + state)
