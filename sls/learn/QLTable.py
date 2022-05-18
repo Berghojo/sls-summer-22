@@ -13,7 +13,10 @@ class QLTable:
                  for e in range(-self.index_values, self.index_values + 1)] + ['target']
 
         self.actions = actions
-        self.epsilon = epsilon
+        self.train = train
+        self.epsilon = 1.0 if train else 0
+        self.max_temperature = 10.0
+        self.temperature = self.max_temperature
         self.alpha = 0.1
         self.gama = 0.9
         self.q_table = pd.DataFrame(table_init, index=index, columns=self.actions.keys())

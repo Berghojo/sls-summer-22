@@ -47,10 +47,17 @@ class Runner:
         self.writer.add_summary(tf.compat.v1.Summary(
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
                 self.episode)
-        if isinstance(self.agent, QLAgent):
+        if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent):
+            tag = 'Epsilon' if isinstance(self.agent, QLAgent) \
+                else 'Temperature' if isinstance(self.agent, SARSA_Agent) \
+                else ''
+            value = self.agent.get_epsilon() if isinstance(self.agent, QLAgent) \
+                else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \
+                else 0
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),
                 self.episode)
+            print(f'{tag}: ', value)
 
         # with self.writer.as_default():
         #     tf.summary.scalar('Score per Episode', self.score, step=self.episode)
@@ -69,7 +76,10 @@ class Runner:
             while True:
                 action = self.agent.step(obs)
                 if obs.last():
-                    if isinstance(self.agent, QLAgent):
+
+                    if isinstance(self.agent, SARSA_Agent):
+                        self.agent.update_temp(episodes)
+                    elif not isinstance(self.agent, BasicAgent):
                         self.agent.update_epsilon(episodes)
                     break
                 obs = self.env.step(action)

@@ -23,7 +23,7 @@ class SARSA_Agent(AbstractAgent):
                 return self._NO_OP
 
             state = self.get_state(marine_coords, beacon_coords, obs)
-            action = self.qtable.choose_action(state)
+            action = self.qtable.choose_action_boltzmann(state)
 
             if self.last_state and self.train:
                 self.qtable.learn_sarsa(self.last_state, self.last_action, state, obs, action)
@@ -56,10 +56,10 @@ class SARSA_Agent(AbstractAgent):
     def load_model(self, filename):
         self.qtable.load_qtable(filename)
 
-    def update_epsilon(self, episodes):
-        epsilon = self.qtable.epsilon - (1 / (episodes - 100))
-        if epsilon < 0.001:
-            epsilon = 0.0
+    def update_temp(self, episodes):
+        temp = self.qtable.temperature - (self.qtable.max_temperature / episodes)
+        if temp <= 0.0:
+            temp = 0.001
         #update epsilon
         self.qtable.epsilon = epsilon
 
