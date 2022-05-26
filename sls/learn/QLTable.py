@@ -4,6 +4,7 @@ import os
 import datetime
 
 
+
 class QLTable:
 
     def __init__(self, actions, screen_size, table_init, epsilon):
