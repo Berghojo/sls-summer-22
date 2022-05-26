@@ -11,7 +11,7 @@ class SARSA_Agent(AbstractAgent):
         self.train = train
         self.last_state = None
         self.last_action = None
-        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0, 1.0 if train else 0)
+        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0, train)
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
@@ -61,7 +61,10 @@ class SARSA_Agent(AbstractAgent):
         if temp <= 0.0:
             temp = 0.001
         #update epsilon
-        self.qtable.epsilon = epsilon
+        self.qtable.temperature = temp
 
-    def get_epsilon(self):
-        return self.qtable.epsilon
+    def get_temp(self):
+        return self.qtable.temperature
+
+    def update_epsilon(self, episodes):
+        pass

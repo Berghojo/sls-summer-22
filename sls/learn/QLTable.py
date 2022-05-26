@@ -6,7 +6,7 @@ import datetime
 
 class QLTable:
 
-    def __init__(self, actions, screen_size, table_init, epsilon):
+    def __init__(self, actions, screen_size, table_init, train):
         self.state_space = 2
         self.index_values = int(screen_size / self.state_space)
         index = [f'{i} {e}' for i in range(-self.index_values, self.index_values + 1)
@@ -32,6 +32,18 @@ class QLTable:
             # choose random action
             action = np.random.choice(list(self.actions.keys()))
 
+        return action
+
+    def choose_action_boltzmann(self, s):
+        if self.train:
+            q_val = self.q_table.loc[s]
+            q_prob = (np.exp(q_val / self.temperature) / np.sum(np.exp(q_val / self.temperature))).tolist()
+            if any(e != 0.125 for e in q_prob):
+                print(q_prob)
+            action = np.random.choice(list(self.actions.keys()), p=q_prob)
+        else:
+            action = self.choose_action(s)  # epsilon = 0 if train = false -> choose_action returns max
+            assert(True == False)
         return action
 
     def learn(self, s, a, s_new, obs):

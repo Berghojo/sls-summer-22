@@ -11,7 +11,7 @@ class QLAgent(AbstractAgent):
         self.train = train
         self.last_state = None
         self.last_action = None
-        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0, 1.0 if train else 0)
+        self.qtable = QLTable(self._DIRECTIONS, screen_size, 0.0, train)
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:

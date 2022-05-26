@@ -55,7 +55,7 @@ class Runner:
                 else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \
                 else 0
             self.writer.add_summary(tf.compat.v1.Summary(
-                value=[tf.compat.v1.Summary.Value(tag='Epsilon', simple_value=self.agent.get_epsilon())]),
+                value=[tf.compat.v1.Summary.Value(tag=tag, simple_value=value)]),
                 self.episode)
             print(f'{tag}: ', value)
 
