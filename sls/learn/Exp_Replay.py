@@ -1,3 +1,5 @@
+import numpy as np
+
 class ExperienceReplay:
     def __init__(self, size):
         self.size = size
@@ -14,7 +16,7 @@ class ExperienceReplay:
             self.rewards.pop(0)
             self.states_next.pop(0)
             self.dones.pop(0)
-        self.states.append(state)
+        self.states.append(np.array(state))
         self.actions.append(action)
         self.rewards.append(reward)
         self.states_next.append(states_next)

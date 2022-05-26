@@ -53,6 +53,7 @@ class Runner:
                 else ''
             value = self.agent.get_epsilon() if isinstance(self.agent, QLAgent) \
                 else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \
+                else self.agent.get_epsilon() if isinstance(self.agent, DQN_Agent) \
                 else 0
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag=tag, simple_value=value)]),

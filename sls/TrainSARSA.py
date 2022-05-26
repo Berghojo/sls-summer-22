@@ -3,10 +3,10 @@ from sls import Env, Runner
 from sls.agents import *
 
 _CONFIG = dict(
-    episodes=500,
+    episodes=1000,
     screen_size=64,
     minimap_size=64,
-    visualize=True,
+    visualize=False,
     train=True,
     agent=SARSA_Agent,
     load_path='./graphs/...'

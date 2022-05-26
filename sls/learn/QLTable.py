@@ -15,7 +15,7 @@ class QLTable:
         self.actions = actions
         self.train = train
         self.epsilon = 1.0 if train else 0
-        self.max_temperature = 20.0
+        self.max_temperature = 0.5
         self.temperature = self.max_temperature
         self.alpha = 0.1
         self.gama = 0.9
@@ -42,9 +42,7 @@ class QLTable:
                 print(q_prob)
             action = np.random.choice(list(self.actions.keys()), p=q_prob)
         else:
-            action = self.choose_action(s)  # epsilon = 0 if train = false -> choose_action returns max
-            assert(True == False)
-        return action
+            return self.choose_action(s)  # epsilon = 0 if train = false -> choose_action returns max
 
     def learn(self, s, a, s_new, obs):
         self.check_state_exist(s)

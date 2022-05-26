@@ -11,7 +11,7 @@ class DeepQNetwork:
     def __init__(self, actions, train):
         self.gamma = 0.9
         self.actions = actions
-        self.epsilon = 0.5
+        self.epsilon = 1
         self.model = Sequential()
         self.model.add(Dense(units=16, activation='relu', input_dim=2))
         self.model.add(Dense(units=32, activation='relu'))
@@ -22,13 +22,12 @@ class DeepQNetwork:
         self.target_model.compile(loss='mse', optimizer=RMSprop(lr=0.00025))
         self.target_model.set_weights(self.model.get_weights())
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
+        self.directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
     def choose_action(self, s):
         if np.random.uniform(0, 1) > self.epsilon:
             # choose best action (random selection if multiple solutions)
-            print(s)
             s = np.reshape(s, [-1, 2])
-            print(s)
             action_id = np.argmax(self.model.predict(s))
             action = list(self.actions.keys())[action_id]
         else:
@@ -38,19 +37,22 @@ class DeepQNetwork:
         return action
 
     def learn(self, exp_replay):
-        mini_batch = np.random.randint(len(exp_replay), 32)
-        x_train = exp_replay.states[mini_batch]
-        y_train = []
+        mini_batch = np.random.randint(len(exp_replay), size=32).tolist()
+        x_train = np.array(exp_replay.states)[mini_batch]
+        y_train = self.target_model.predict(x_train)
+        next_q_values = self.target_model.predict(np.array(exp_replay.states_next)[mini_batch])
+        i = 0
         for idx in mini_batch:
+
             if exp_replay.dones[idx]:
                 value = exp_replay.rewards[idx]
             else:
-                next_state = exp_replay.states_next[idx]
-                value = exp_replay.rewards[idx] + self.gamma * np.max(self.target_model.predict(next_state))
-            y_train.append(value)
+                next_state = exp_replay.states_next[idx].reshape([-1, 2])
+                value = exp_replay.rewards[idx] + self.gamma * np.max(next_q_values[i])
+            y_train[i, self.directions.index(exp_replay.actions[idx])] = value
+            i += 1
         # update table
-        self.model.fit(x_train, y_train)
-        print('fitting')
+        self.model.fit(x_train, y_train, verbose=False)
 
     def save_model_weights(self, path):
         filename = path + self.exportfile
