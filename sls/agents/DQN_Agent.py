@@ -30,7 +30,7 @@ class DQN_Agent(AbstractAgent):
             if self.last_state is not None:
                 self.exp_replay.add_experience(self.last_state, self.last_action, obs.reward, state, done)
             direction = self.dqn_network.choose_action(state)
-            #print('EXP_SIZE:', self.exp_replay.__len__())
+
             if self.last_state is not None and self.train and self.exp_replay.__len__() > self.min_batch_size:
                 self.dqn_network.learn(self.exp_replay)
 
@@ -40,6 +40,7 @@ class DQN_Agent(AbstractAgent):
             else:
                 self.last_action = direction
                 self.last_state = state
+
             return self._dir_to_sc2_action(direction, marine_coords)
         else:
             return self._SELECT_ARMY
@@ -48,6 +49,7 @@ class DQN_Agent(AbstractAgent):
         return (beacon_coords - marine_coords) / self.screen_size
 
     def update_target_model(self):
+        print('reset networks')
         self.dqn_network.reset_q()
 
     def save_model(self, path):
@@ -65,4 +67,4 @@ class DQN_Agent(AbstractAgent):
         self.dqn_network.epsilon = epsilon
 
     def get_epsilon(self):
-        return self.qtable.epsilon
+        return self.dqn_network.epsilon

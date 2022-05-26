@@ -10,48 +10,56 @@ class DeepQNetwork:
 
     def __init__(self, actions, train):
         self.gamma = 0.9
-        self.actions = actions
+        self.actions = list(actions.keys())
         self.epsilon = 1
-        self.model = Sequential()
-        self.model.add(Dense(units=16, activation='relu', input_dim=2))
-        self.model.add(Dense(units=32, activation='relu'))
-        self.model.add(Dense(units=8, activation='linear'))
-        self.model.compile(loss='mse', optimizer=RMSprop(lr=0.00025))
-        self.target_model = clone_model(self.model)
-        self.target_model.build((None, 2))  # number of variables in input layer
-        self.target_model.compile(loss='mse', optimizer=RMSprop(lr=0.00025))
+        self.verbose = 1
+        self.counter = 0
+        self.train = train
+        self.input_dim = 2
+        self.model = self.create_model()
+        self.target_model = self.create_model()
         self.target_model.set_weights(self.model.get_weights())
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
-        self.directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+
+    def create_model(self):
+        model = Sequential()
+        model.add(Dense(units=16, activation='relu', input_dim=self.input_dim))
+        model.add(Dense(units=32, activation='relu'))
+        model.add(Dense(units=8, activation='linear'))
+        model.build((None, 2))
+        model.compile(loss='mse', optimizer=RMSprop(learning_rate=0.00025))
+        return model
 
     def choose_action(self, s):
-        if np.random.uniform(0, 1) > self.epsilon:
+        if np.random.uniform(0, 1) > self.epsilon or not self.train:
             # choose best action (random selection if multiple solutions)
             s = np.reshape(s, [-1, 2])
             action_id = np.argmax(self.model.predict(s))
-            action = list(self.actions.keys())[action_id]
+            action = self.actions[action_id]
         else:
             # choose random action
-            action = np.random.choice(list(self.actions.keys()))
+            action = np.random.choice(self.actions)
 
         return action
 
     def learn(self, exp_replay):
-        mini_batch = np.random.randint(len(exp_replay), size=32).tolist()
+        mini_batch = np.random.randint(exp_replay.__len__(), size=32)
         x_train = np.array(exp_replay.states)[mini_batch]
-        y_train = self.target_model.predict(x_train)
+        y_train = self.model.predict(x_train)
         next_q_values = self.target_model.predict(np.array(exp_replay.states_next)[mini_batch])
-        i = 0
-        for idx in mini_batch:
-
+        for i, idx in enumerate(mini_batch):
             if exp_replay.dones[idx]:
                 value = exp_replay.rewards[idx]
+                print(x_train[i]*64, np.array(exp_replay.states_next)[mini_batch][i]*64, valu)
             else:
-                value = exp_replay.rewards[idx] + self.gamma * np.max(next_q_values[i])
-            y_train[i, self.directions.index(exp_replay.actions[idx])] = value
-            i += 1
+                value = exp_replay.rewards[idx] + self.gamma * max(next_q_values[i])
+            y_train[i][self.actions.index(exp_replay.actions[idx])] = value
         # update table
-        self.model.fit(x_train, y_train, verbose=False)
+        self.model.fit(x_train, y_train, verbose=self.verbose)
+        self.counter += 1
+        self.verbose = 0
+        if self.counter % 200 == 0:
+            self.verbose = 1
 
     def save_model_weights(self, path):
         filename = path + self.exportfile

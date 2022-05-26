@@ -47,7 +47,8 @@ class Runner:
         self.writer.add_summary(tf.compat.v1.Summary(
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
                 self.episode)
-        if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent):
+        if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent) \
+                or isinstance(self.agent, DQN_Agent):
             tag = 'Epsilon' if not isinstance(self.agent, BasicAgent) \
                 else 'Temperature' if isinstance(self.agent, SARSA_Agent) \
                 else ''
