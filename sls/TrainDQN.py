@@ -8,7 +8,7 @@ _CONFIG = dict(
     minimap_size=64,
     visualize=True,
     train=True,
-    agent=SARSA_Agent,
+    agent=DQN_Agent,
     load_path='./graphs/...'
 )
 

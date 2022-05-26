@@ -1,17 +1,19 @@
 from sls.agents import AbstractAgent
 from sls.learn import ExperienceReplay, DeepQNetwork
-
+import tensorflow as tf
 
 
 class DQN_Agent(AbstractAgent):
 
     def __init__(self, train, screen_size):
+        tf.compat.v1.disable_eager_execution()
         super(DQN_Agent, self).__init__(screen_size)
         self.train = train
         self.last_state = None
         self.last_action = None
+        self.decay_episodes = 500
         self.exp_replay = ExperienceReplay(100_000)
-        self.dqn_network = DeepQNetwork()
+        self.dqn_network = DeepQNetwork(self._DIRECTIONS, train)
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
@@ -27,10 +29,10 @@ class DQN_Agent(AbstractAgent):
             self.exp_replay.add_experience(self.last_state, self.last_action, obs.reward, state, done)
             direction = self.dqn_network.choose_action(state)
 
-            if self.last_state and self.train and len(self.exp_replay) > 6000:
+            if self.last_state is not None and self.train and self.exp_replay.__len__() > 6000:
                 self.dqn_network.learn(self.exp_replay)
 
-            if state == 'target' or obs.last():
+            if obs.reward != 0 or obs.last():
                 self.last_action = None
                 self.last_state = None
             else:
@@ -47,17 +49,18 @@ class DQN_Agent(AbstractAgent):
 
 
     def save_model(self, path):
-        self.qtable.save_qtable(path)
+        self.dqn_network.save_model_weights(path)
 
     def load_model(self, filename):
-        self.qtable.load_qtable(filename)
+        self.dqn_network.load_model_weights(filename)
 
     def update_epsilon(self, episodes):
-        epsilon = self.qtable.epsilon - (1 / (episodes - 100))
-        if epsilon < 0.001:
-            epsilon = 0.0
+        epsilon = self.dqn_network.epsilon - (0.95 / self.decay_episodes)
+        #TODO: remove hard coding
+        if epsilon < 0.05:
+            epsilon = 0.05
         #update epsilon
-        self.qtable.epsilon = epsilon
+        self.dqn_network.epsilon = epsilon
 
     def get_epsilon(self):
         return self.qtable.epsilon

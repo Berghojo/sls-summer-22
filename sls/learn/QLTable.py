@@ -15,7 +15,7 @@ class QLTable:
         self.actions = actions
         self.train = train
         self.epsilon = 1.0 if train else 0
-        self.max_temperature = 10.0
+        self.max_temperature = 20.0
         self.temperature = self.max_temperature
         self.alpha = 0.1
         self.gama = 0.9
