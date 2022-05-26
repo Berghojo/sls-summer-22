@@ -63,3 +63,6 @@ class DeepQNetwork:
         if os.path.isfile(filepath):
             self.model = h5py.File(filepath, 'r')
             print('loaded')
+
+    def reset_q(self):
+        self.target_model.set_weights(self.model.get_weights())
