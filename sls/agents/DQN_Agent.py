@@ -34,7 +34,7 @@ class DQN_Agent(AbstractAgent):
             if self.last_state is not None and self.train and self.exp_replay.__len__() > self.min_batch_size:
                 self.dqn_network.learn(self.exp_replay)
 
-            if obs.reward != 0 or obs.last():
+            if done:
                 self.last_action = None
                 self.last_state = None
             else:

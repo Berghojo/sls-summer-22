@@ -47,7 +47,6 @@ class DeepQNetwork:
             if exp_replay.dones[idx]:
                 value = exp_replay.rewards[idx]
             else:
-                next_state = exp_replay.states_next[idx].reshape([-1, 2])
                 value = exp_replay.rewards[idx] + self.gamma * np.max(next_q_values[i])
             y_train[i, self.directions.index(exp_replay.actions[idx])] = value
             i += 1

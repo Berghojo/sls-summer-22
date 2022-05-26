@@ -48,7 +48,7 @@ class Runner:
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
                 self.episode)
         if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent):
-            tag = 'Epsilon' if isinstance(self.agent, QLAgent) \
+            tag = 'Epsilon' if not isinstance(self.agent, BasicAgent) \
                 else 'Temperature' if isinstance(self.agent, SARSA_Agent) \
                 else ''
             value = self.agent.get_epsilon() if isinstance(self.agent, QLAgent) \
