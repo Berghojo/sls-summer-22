@@ -43,10 +43,8 @@ class DQN_Agent(AbstractAgent):
         else:
             return self._SELECT_ARMY
 
-
     def get_state(self, marine_coords, beacon_coords):
         return (beacon_coords - marine_coords) / self.screen_size
-
 
     def save_model(self, path):
         self.dqn_network.save_model_weights(path)
