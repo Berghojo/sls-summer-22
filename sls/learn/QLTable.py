@@ -38,9 +38,9 @@ class QLTable:
         if self.train:
             q_val = self.q_table.loc[s]
             q_prob = (np.exp(q_val / self.temperature) / np.sum(np.exp(q_val / self.temperature))).tolist()
-            if any(e != 0.125 for e in q_prob):
-                print(q_prob)
-            action = np.random.choice(list(self.actions.keys()), p=q_prob)
+            # if any(e != 0.125 for e in q_prob):
+            #     print(q_prob)
+            return np.random.choice(list(self.actions.keys()), p=q_prob)
         else:
             return self.choose_action(s)  # epsilon = 0 if train = false -> choose_action returns max
 
