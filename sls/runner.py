@@ -71,6 +71,8 @@ class Runner:
                 if obs.last():
                     if isinstance(self.agent, QLAgent):
                         self.agent.update_epsilon(episodes)
+                    if isinstance(self.agent, SARSA_Agent):
+                        self.agent.update_epsilon(episodes)
                     break
                 obs = self.env.step(action)
                 self.score += obs.reward

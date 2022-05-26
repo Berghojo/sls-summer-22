@@ -61,6 +61,7 @@ class SARSA_Agent(AbstractAgent):
         if epsilon < 0.001:
             epsilon = 0.0
         #update epsilon
+        print(self.qtable.epsilon)
         self.qtable.epsilon = epsilon
 
     def get_epsilon(self):
