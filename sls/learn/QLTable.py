@@ -15,11 +15,15 @@ class QLTable:
         self.actions = actions
         self.train = train
         self.epsilon = 1.0 if train else 0
-        self.max_temperature = 0.5
+        self.max_temperature = 0.3
         self.temperature = self.max_temperature
         self.alpha = 0.1
-        self.gama = 0.9
-        self.q_table = pd.DataFrame(table_init, index=index, columns=self.actions.keys())
+        self.gama = 0.99
+        if self.train:
+            self.q_table = pd.DataFrame(table_init, index=index, columns=self.actions.keys())
+        else:
+            path = 'models/sarsa_aufgabe01.pkl'
+            self.q_table = self.load_qtable(path)
 
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_q_table.pkl'
 
@@ -38,8 +42,6 @@ class QLTable:
         if self.train:
             q_val = self.q_table.loc[s]
             q_prob = (np.exp(q_val / self.temperature) / np.sum(np.exp(q_val / self.temperature))).tolist()
-            # if any(e != 0.125 for e in q_prob):
-            #     print(q_prob)
             return np.random.choice(list(self.actions.keys()), p=q_prob)
         else:
             return self.choose_action(s)  # epsilon = 0 if train = false -> choose_action returns max
@@ -77,5 +79,5 @@ class QLTable:
 
     def load_qtable(self, filepath):
         if os.path.isfile(filepath):
-            self.q_table = pd.read_pickle(filepath)
             print('loaded')
+            return pd.read_pickle(filepath)
