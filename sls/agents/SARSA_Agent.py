@@ -58,8 +58,8 @@ class SARSA_Agent(AbstractAgent):
 
     def update_temp(self, episodes):
         temp = self.qtable.temperature - (self.qtable.max_temperature / episodes)
-        if temp <= 0.0:
-            temp = 0.001
+        if temp <= 0.0015:
+            temp = 0.0015
         #update epsilon
         self.qtable.temperature = temp
 

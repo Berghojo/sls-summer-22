@@ -49,8 +49,8 @@ class Runner:
                 self.episode)
         if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent) \
                 or isinstance(self.agent, DQN_Agent):
-            tag = 'Epsilon' if not isinstance(self.agent, BasicAgent) \
-                else 'Temperature' if isinstance(self.agent, SARSA_Agent) \
+            tag = 'Temperature' if isinstance(self.agent, SARSA_Agent)\
+                else 'Epsilon' if not isinstance(self.agent, BasicAgent)\
                 else ''
             value = self.agent.get_epsilon() if isinstance(self.agent, QLAgent) \
                 else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \

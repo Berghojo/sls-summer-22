@@ -50,7 +50,7 @@ class DeepQNetwork:
         for i, idx in enumerate(mini_batch):
             if exp_replay.dones[idx]:
                 value = exp_replay.rewards[idx]
-                print(x_train[i]*64, np.array(exp_replay.states_next)[mini_batch][i]*64, valu)
+                print(x_train[i]*64, np.array(exp_replay.states_next)[mini_batch][i]*64, value)
             else:
                 value = exp_replay.rewards[idx] + self.gamma * max(next_q_values[i])
             y_train[i][self.actions.index(exp_replay.actions[idx])] = value

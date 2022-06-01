@@ -7,7 +7,7 @@ _CONFIG = dict(
     screen_size=64,
     minimap_size=64,
     visualize=False,
-    train=True,
+    train=False,
     agent=SARSA_Agent,
     load_path='./graphs/...'
 )
