@@ -27,7 +27,7 @@ class DQN_Agent(AbstractAgent):
 
             state = self.get_state(marine_coords, beacon_coords)
             done = obs.reward == 1 or obs.last()
-            if self.last_state is not None:
+            if self.last_state is not None and self.train:
                 self.exp_replay.add_experience(self.last_state, self.last_action, obs.reward, state, done)
             direction = self.dqn_network.choose_action(state)
 
