@@ -3,16 +3,18 @@ import h5py
 import datetime
 import os
 from tensorflow.keras.models import Sequential, clone_model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten
+import tensorflow as tf
 from tensorflow.keras.optimizers import RMSprop
 import random
 
-class DeepQNetwork:
+
+class CNNDuelingDDQNPrioritized:
 
     def __init__(self, actions, train):
         self.gamma = 0.9
         self.actions = list(actions.keys())
-        self.epsilon = 1
+        self.epsilon = 0.5
         self.verbose = 1
         self.counter = 0
         self.train = train
@@ -26,19 +28,34 @@ class DeepQNetwork:
         self.target_model.set_weights(self.model.get_weights())
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
+    def lambda_layer(self, input_lmd):
+        value = input_lmd[:, 0]
+        value = tf.reshape(value, [-1, 1])
+        advantages = input_lmd[:, 1:]
+        mean_advantage = tf.math.reduce_mean(advantages, axis=1)
+        mean_advantage = tf.reshape(mean_advantage, [-1, 1])
+        q_value = value + (advantages - mean_advantage)
+        return q_value
+
     def create_model(self):
         model = Sequential()
-        model.add(Dense(units=16, activation='relu', input_dim=self.input_dim))
-        model.add(Dense(units=32, activation='relu'))
+        model.add(Conv2D(16, 5, strides=1, activation='relu', input_shape=(16, 16, 1)))
+        model.add(Conv2D(32, 3, strides=1, activation='relu'))
+        model.add(Flatten())
+        model.add(Dense(units=64, activation='relu'))
         model.add(Dense(units=8, activation='linear'))
+        model.add(Lambda(lambda x: self.lambda_layer(x)))
         model.build((None, 2))
         model.compile(loss='mse', optimizer=RMSprop(learning_rate=0.00025))
+        model.summary()
         return model
 
     def choose_action(self, s):
         if np.random.uniform(0, 1) > self.epsilon or not self.train:
             # choose best action (random selection if multiple solutions)
             s = np.reshape(s, [-1, 2])
+
+
             action_id = np.argmax(self.model.predict(s))
             action = self.actions[action_id]
         else:
@@ -54,7 +71,9 @@ class DeepQNetwork:
             self.target_model = temp
         if np.random.uniform(0, 1) > self.epsilon or not self.train:
             # choose best action (random selection if multiple solutions)
-            s = np.reshape(s, [-1, 2])
+            s = s.reshape([-1, 16, 16, 1])
+            print(s)
+            print(self.model.predict(s))
             action_id = np.argmax(self.model.predict(s))
             action = self.actions[action_id]
         else:
@@ -82,7 +101,7 @@ class DeepQNetwork:
             self.verbose = 1
 
     def save_model_weights(self, path):
-        filename = path + self.exportfile
+        filename = f'{path}{self.exportfile}'
         self.model.save_weights(filename)
         print('saved')
 
@@ -90,6 +109,7 @@ class DeepQNetwork:
         if os.path.isfile(filepath):
             print('loaded')
             self.model.load_weights(filepath)
+        self.target_model.set_weights(self.model.get_weights())
 
     def reset_q(self):
-        self.target_model.set_weights(self.model.get_weights())
+        pass

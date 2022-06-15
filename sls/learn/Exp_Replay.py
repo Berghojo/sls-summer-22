@@ -10,7 +10,7 @@ class ExperienceReplay:
         self.dones = []
 
     def add_experience(self, state, action, reward, states_next, done):
-        if len(self.states) > self.size:
+        if len(self.states) >= self.size:
             self.states.pop(0)
             self.actions.pop(0)
             self.rewards.pop(0)

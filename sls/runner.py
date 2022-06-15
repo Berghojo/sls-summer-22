@@ -48,13 +48,14 @@ class Runner:
             value=[tf.compat.v1.Summary.Value(tag='Score per Episode', simple_value=self.score)]),
                 self.episode)
         if isinstance(self.agent, QLAgent) or isinstance(self.agent, SARSA_Agent) \
-                or isinstance(self.agent, DQN_Agent):
+                or isinstance(self.agent, DQN_Agent) or isinstance(self.agent, DuelDQN_Agent):
             tag = 'Temperature' if isinstance(self.agent, SARSA_Agent)\
                 else 'Epsilon' if not isinstance(self.agent, BasicAgent)\
                 else ''
             value = self.agent.get_epsilon() if isinstance(self.agent, QLAgent) \
                 else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \
                 else self.agent.get_epsilon() if isinstance(self.agent, DQN_Agent) \
+                else self.agent.get_epsilon() if isinstance(self.agent, DuelDQN_Agent) \
                 else 0
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag=tag, simple_value=value)]),
@@ -66,7 +67,8 @@ class Runner:
         if self.train and self.episode % 10 == 0:
             self.agent.save_model(self.path_model)
             try:
-                self.agent.update_target_model()
+                if isinstance(self.agent, DQN_Agent) or isinstance(self.agent, DuelDQN_Agent):
+                    self.agent.update_target_model()
             except AttributeError:
                 ...
         self.episode += 1
