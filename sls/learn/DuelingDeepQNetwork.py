@@ -28,6 +28,7 @@ class DuelingDeepQNetwork:
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
     def lambda_layer(self, input_lmd):
+        # (?, 9)
         value = input_lmd[:, 0]
         value = tf.reshape(value, [-1, 1])
         advantages = input_lmd[:, 1:]
@@ -41,8 +42,8 @@ class DuelingDeepQNetwork:
         model.add(Dense(units=16, activation='relu', input_dim=self.input_dim))
         model.add(Dense(units=32, activation='relu'))
         model.add(Dense(units=9, activation='linear'))
-        model.add(Lambda(lambda x: self.lambda_layer(x)))
-        model.build((None, 2))
+        # [V, A1, A2, ..., A8]
+        model.add(Lambda(self.lambda_layer))
         model.compile(loss='mse', optimizer=RMSprop(learning_rate=0.00025))
         return model
 
@@ -65,10 +66,11 @@ class DuelingDeepQNetwork:
         next_q_values = self.target_model.predict(np.array(exp_replay.states_next)[mini_batch])
         for i, idx in enumerate(mini_batch):
             if exp_replay.dones[idx]:
-                value = exp_replay.rewards[idx]
+                y_train[i][self.actions.index(exp_replay.actions[idx])] = exp_replay.rewards[idx]
             else:
-                value = exp_replay.rewards[idx] + self.gamma * max(next_q_values[i])
-            y_train[i][self.actions.index(exp_replay.actions[idx])] = value
+                y_train[i][self.actions.index(exp_replay.actions[idx])] = exp_replay.rewards[idx] + \
+                                                                          self.gamma * max(next_q_values[i])
+
         # update table
         self.model.fit(x_train, y_train, verbose=self.verbose)
         self.counter += 1
@@ -88,4 +90,4 @@ class DuelingDeepQNetwork:
         self.target_model.set_weights(self.model.get_weights())
 
     def reset_q(self):
-        pass
+        self.target_model.set_weights(self.model.get_weights())

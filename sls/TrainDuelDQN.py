@@ -5,8 +5,8 @@ from sls.agents import *
 _CONFIG = dict(
     episodes=500,
     screen_size=16,
-    minimap_size=16,
-    visualize=True,
+    minimap_size=64,
+    visualize=False,
     train=True,
     agent=DuelDQN_Agent,
     load_path='./graphs/...'
