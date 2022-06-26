@@ -56,6 +56,8 @@ class Runner:
                 else self.agent.get_temp() if isinstance(self.agent, SARSA_Agent) \
                 else self.agent.get_epsilon() if isinstance(self.agent, DQN_Agent) \
                 else self.agent.get_epsilon() if isinstance(self.agent, DuelDQN_Agent) \
+                else self.agent.get_epsilon() if isinstance(self.agent, CNN_Agent) \
+                else self.agent.get_epsilon() if isinstance(self.agent, DDQN_Agent)\
                 else 0
             self.writer.add_summary(tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(tag=tag, simple_value=value)]),
@@ -81,9 +83,9 @@ class Runner:
                 action = self.agent.step(obs)
                 if obs.last():
 
-                    if isinstance(self.agent, SARSA_Agent):
+                    if isinstance(self.agent, SARSA_Agent) and self.train:
                         self.agent.update_temp(episodes)
-                    elif not isinstance(self.agent, BasicAgent):
+                    elif not isinstance(self.agent, BasicAgent) and self.train:
                         self.agent.update_epsilon(episodes)
                     break
                 obs = self.env.step(action)

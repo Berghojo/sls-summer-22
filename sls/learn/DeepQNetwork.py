@@ -19,7 +19,7 @@ class DeepQNetwork:
         self.input_dim = 2
         self.model = self.create_model()
         if not self.train:
-            path = 'models/abgabe02_aufgabe02_model_weights.h5'
+            path = 'models/abgabe03_aufgabe01_model_weights.h5'
             self.load_model_weights(path)
 
         self.target_model = self.create_model()

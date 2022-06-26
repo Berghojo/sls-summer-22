@@ -7,8 +7,8 @@ _CONFIG = dict(
     screen_size=16,
     minimap_size=64,
     visualize=False,
-    train=True,
-    agent=DDQN_Agent,
+    train=False,
+    agent=DuelDQN_Agent,
     load_path='./graphs/...'
 )
 
