@@ -9,6 +9,7 @@ class CNN_Agent(AbstractAgent):
 
     def __init__(self, train, screen_size):
         tf.compat.v1.disable_eager_execution()
+
         super(CNN_Agent, self).__init__(screen_size)
         self.train = train
         self.last_state = None
