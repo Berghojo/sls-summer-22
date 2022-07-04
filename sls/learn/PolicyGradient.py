@@ -55,13 +55,14 @@ class PolicyGradient:
 
     def learn(self, episode):
         episode_len = len(episode.states)
+        if episode_len == 0:
+            return
         G = []
         for t in range(episode_len):
             value = 0
             for k in range(t, episode_len):
-                value += (self.gamma ** k-t) * episode.rewards[k]
+                value += (self.gamma ** (k-t)) * episode.rewards[k]
             G.append([value, self.actions.index(episode.actions[t])])
-
         # update table
         self.model.fit(np.array(episode.states), np.array(G), verbose=self.verbose, batch_size=None)
         self.counter += 1

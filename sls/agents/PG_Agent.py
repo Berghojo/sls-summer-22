@@ -35,11 +35,9 @@ class PG_Agent(AbstractAgent):
 
             if done:
                 self.policy_gradient.learn(self.episode)
-                self.episode.clear()
-
-            if done:
                 self.last_action = None
                 self.last_state = None
+                self.episode.clear()
             else:
                 self.last_action = direction
                 self.last_state = state
