@@ -9,7 +9,7 @@ from tensorflow.keras.optimizers import RMSprop
 import random
 
 
-class CNNDuelingDDQNPrioritized:
+class CNNDuelingDDQNPrioritize:
 
     def __init__(self, actions, train):
         self.gamma = 0.9

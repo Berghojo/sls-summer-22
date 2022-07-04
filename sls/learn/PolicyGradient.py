@@ -1,5 +1,5 @@
 import numpy as np
-import h5py
+import tensorflow as tf
 import datetime
 import os
 from tensorflow.keras.models import Sequential, clone_model
@@ -7,7 +7,8 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.optimizers import RMSprop
 import random
 
-class DeepQNetwork:
+
+class PolicyGradient:
 
     def __init__(self, actions, train):
         self.gamma = 0.99
@@ -21,10 +22,18 @@ class DeepQNetwork:
         if not self.train:
             path = 'models/abgabe02_aufgabe02_model_weights.h5'
             self.load_model_weights(path)
-
-        self.target_model = self.create_model()
-        self.target_model.set_weights(self.model.get_weights())
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
+
+    @staticmethod
+    def custom_loss(G_action, policy_distribution):
+        G, actions = G_action[:, 0], tf.cast(G_action[:, 1], tf.int32)
+        indexes = tf.range(0, tf.size(actions))
+        stacked_actions = tf.stack([indexes, actions], axis=1)
+        policy_action = tf.gather_nd(indices=stacked_actions, params=policy_distribution)
+        loss = (-tf.math.log(policy_action)) * G
+        mean_loss = tf.math.reduce_mean(loss)
+        return mean_loss
+
 
     def create_model(self):
         model = Sequential()
@@ -32,52 +41,31 @@ class DeepQNetwork:
         model.add(Dense(units=256, activation='relu'))
         model.add(Dense(units=8, activation='softmax'))
         model.build((None, 2))
-        model.compile(loss='mse', optimizer=RMSprop(learning_rate=0.00025))
+        model.compile(loss=PolicyGradient.custom_loss, optimizer=RMSprop(learning_rate=0.00025))
         return model
 
     def choose_action(self, s):
-        if np.random.uniform(0, 1) > self.epsilon or not self.train:
-            # choose best action (random selection if multiple solutions)
-            s = np.reshape(s, [-1, 2])
-            action_id = np.argmax(self.model.predict(s))
-            action = self.actions[action_id]
-        else:
-            # choose random action
-            action = np.random.choice(self.actions)
 
+        s = np.reshape(s, [-1, 2])
+        action_dist = self.model.predict(s)[0]
+        action_id = np.random.choice(range(len(action_dist)), p=action_dist)
+        action = self.actions[action_id]
         return action
 
-    def choose_action_double(self, s):
-        if random.randint(0, 1) == 1 and self.train:
-            temp = self.model
-            self.model = self.target_model
-            self.target_model = temp
-        if np.random.uniform(0, 1) > self.epsilon or not self.train:
-            # choose best action (random selection if multiple solutions)
-            s = np.reshape(s, [-1, 2])
-            action_id = np.argmax(self.model.predict(s))
-            action = self.actions[action_id]
-        else:
-            # choose random action
-            action = np.random.choice(self.actions)
 
-        return action
+    def learn(self, episode):
+        episode_len = len(episode.states)
+        G = []
+        for t in range(episode_len):
+            value = 0
+            for k in range(t, episode_len):
+                value += (self.gamma ** k-t) * episode.rewards[k]
+            G.append([value, self.actions.index(episode.actions[t])])
 
-    def learn(self, exp_replay):
-        mini_batch = np.random.randint(exp_replay.__len__(), size=32)
-        x_train = np.array(exp_replay.states)[mini_batch]
-        y_train = self.model.predict(x_train)
-        next_q_values = self.target_model.predict(np.array(exp_replay.states_next)[mini_batch])
-        for i, idx in enumerate(mini_batch):
-            if exp_replay.dones[idx]:
-                value = exp_replay.rewards[idx]
-            else:
-                value = exp_replay.rewards[idx] + self.gamma * max(next_q_values[i])
-            y_train[i][self.actions.index(exp_replay.actions[idx])] = value
         # update table
-        self.model.fit(x_train, y_train, verbose=self.verbose)
+        self.model.fit(np.array(episode.states), np.array(G), verbose=self.verbose, batch_size=None)
         self.counter += 1
-        self.verbose = 0
+        self.verbose = 1
         if self.counter % 200 == 0:
             self.verbose = 1
 

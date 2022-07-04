@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class ExperienceReplay:
     def __init__(self, size):
         self.size = size
@@ -21,6 +22,26 @@ class ExperienceReplay:
         self.rewards.append(reward)
         self.states_next.append(states_next)
         self.dones.append(done)
+
+    def __len__(self):
+        return len(self.states)
+
+
+class MonteCarloEpisode:
+    def __init__(self):
+        self.states = []
+        self.actions = []
+        self.rewards = []
+
+    def add_step(self, state, action, reward):
+        self.states.append(np.array(state))
+        self.actions.append(action)
+        self.rewards.append(reward)
+
+    def clear(self):
+        self.states = []
+        self.actions = []
+        self.rewards = []
 
     def __len__(self):
         return len(self.states)
