@@ -6,9 +6,9 @@ _CONFIG = dict(
     episodes=500,
     screen_size=16,
     minimap_size=64,
-    visualize=False,
-    train=True,
-    agent=DuelDQN_Agent,
+    visualize=True,
+    train=False,
+    agent=CNN_Agent,
     load_path='./graphs/...'
 )
 

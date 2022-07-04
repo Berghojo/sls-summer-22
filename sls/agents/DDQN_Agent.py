@@ -49,8 +49,7 @@ class DDQN_Agent(AbstractAgent):
         return (beacon_coords - marine_coords) / self.screen_size
 
     def update_target_model(self):
-        print('reset networks')
-        self.dqn_network.reset_q()
+        pass
 
     def save_model(self, path):
         self.dqn_network.save_model_weights(path)

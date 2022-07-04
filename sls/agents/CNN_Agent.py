@@ -1,18 +1,21 @@
 from sls.agents import AbstractAgent
 from sls.learn import ExperienceReplay, CNNDuelingDDQNPrioritized
 import tensorflow as tf
+import numpy as np
+from sls.prio_exp_replay import PrioritizedReplayBuffer
 
 
 class CNN_Agent(AbstractAgent):
 
     def __init__(self, train, screen_size):
         tf.compat.v1.disable_eager_execution()
+
         super(CNN_Agent, self).__init__(screen_size)
         self.train = train
         self.last_state = None
         self.last_action = None
         self.decay_episodes = 500
-        self.exp_replay = ExperienceReplay(100_000)
+        self.exp_replay = PrioritizedReplayBuffer(100_000, 0.4)
         self.min_batch_size = 6000
         self.dqn_network = CNNDuelingDDQNPrioritized(self._DIRECTIONS, train)
 
@@ -25,10 +28,10 @@ class CNN_Agent(AbstractAgent):
             if marine is None:
                 return self._NO_OP
 
-            state = self.get_state(obs)
+            state = np.array(self.get_state(obs))
             done = obs.reward == 1 or obs.last()
             if self.last_state is not None and self.train:
-                self.exp_replay.add_experience(self.last_state, self.last_action, obs.reward, state, done)
+                self.exp_replay.add(self.last_state, self.last_action, obs.reward, state, done)
             direction = self.dqn_network.choose_action_double(state)
 
             if self.last_state is not None and self.train and self.exp_replay.__len__() > self.min_batch_size:
