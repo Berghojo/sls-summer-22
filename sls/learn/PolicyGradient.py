@@ -20,7 +20,7 @@ class PolicyGradient:
         self.input_dim = 2
         self.model = self.create_model()
         if not self.train:
-            path = 'models/abgabe02_aufgabe02_model_weights.h5'
+            path = 'models/abgabe04_aufgabe01_model_weights.h5'
             self.load_model_weights(path)
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 

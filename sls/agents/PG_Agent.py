@@ -33,7 +33,7 @@ class PG_Agent(AbstractAgent):
                 self.episode.add_step(self.last_state, self.last_action, reward)
             direction = self.policy_gradient.choose_action(state)
 
-            if done:
+            if done and self.train:
                 self.policy_gradient.learn(self.episode)
                 self.last_action = None
                 self.last_state = None
