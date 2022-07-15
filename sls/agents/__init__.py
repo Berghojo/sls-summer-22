@@ -8,3 +8,4 @@ from .DDQN_Agent import DDQN_Agent
 from .DuelDQN_Agent import DuelDQN_Agent
 from .CNN_Agent import CNN_Agent
 from .PG_Agent import PG_Agent
+from .A2C_Agent import A2C_Agent
