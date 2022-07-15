@@ -14,7 +14,7 @@ class A2C_PolicyGradient:
         # Definitions
         self.n_step_return = 5
         self.value_const = 0.5
-        self.entropie_const = 0.0005
+        self.entropie_const = 0.005
         self.learning_rate = 0.0007
         # TODO: clean up
         self.gamma = 0.99
@@ -43,7 +43,7 @@ class A2C_PolicyGradient:
         value_loss = tf.math.reduce_mean(error ** 2)
         entropy = -tf.math.reduce_sum(policy * tf.math.log(policy))
         policy_entropy = -tf.math.reduce_mean(entropy)
-        loss = policy_loss + 0.5 * value_loss + 0.01 * policy_entropy
+        loss = policy_loss + 0.5 * value_loss + 0.005 * policy_entropy
         return loss
 
     @staticmethod
@@ -97,7 +97,7 @@ class A2C_PolicyGradient:
         # update table
         self.model.fit(np.array(episode.states), np.array(G), verbose=self.verbose, batch_size=None)
         self.counter += 1
-        self.verbose = 1
+        self.verbose = 0
         if self.counter % 200 == 0:
             self.verbose = 1
 

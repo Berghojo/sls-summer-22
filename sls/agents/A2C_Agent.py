@@ -15,7 +15,7 @@ class A2C_Agent(AbstractAgent):
         self.decay_episodes = 500
         self.mini_batch = State_Batch()
         self.value = 0
-        self.neg_reward = -0.1
+        self.neg_reward = -0.01
         self.pos_reward = 1
         self.mini_batch_size = 64
         self.a2c = A2C_PolicyGradient(self._DIRECTIONS, train)
