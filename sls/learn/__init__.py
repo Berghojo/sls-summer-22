@@ -1,5 +1,5 @@
 from .QLTable import QLTable
-from .Exp_Replay import ExperienceReplay, MonteCarloEpisode
+from .Exp_Replay import ExperienceReplay, MonteCarloEpisode, State_Batch
 from .DeepQNetwork import DeepQNetwork
 from .DuelingDeepQNetwork import DuelingDeepQNetwork
 from .CNNDuelingDDQNPrioritized import CNNDuelingDDQNPrioritize

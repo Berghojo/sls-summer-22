@@ -45,3 +45,26 @@ class MonteCarloEpisode:
 
     def __len__(self):
         return len(self.states)
+
+
+class State_Batch:
+    def __init__(self):
+        self.states = []
+        self.actions = []
+        self.rewards = []
+        self.values = []
+
+    def add_step(self, state, action, reward, value):
+        self.states.append(np.array(state))
+        self.actions.append(action)
+        self.rewards.append(reward)
+        self.values.append(value)
+
+    def clear(self):
+        self.states = []
+        self.actions = []
+        self.rewards = []
+        self.values = []
+
+    def __len__(self):
+        return len(self.states)
