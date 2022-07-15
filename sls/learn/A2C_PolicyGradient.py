@@ -30,20 +30,18 @@ class A2C_PolicyGradient:
             self.load_model_weights(path)
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
-    @staticmethod
-    def custom_loss1(advantage_action, model_output):
+    def custom_loss1(self, advantage_action, model_output):
         G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
         policy, critic_value = model_output[:, :-1], model_output[:, -1]
         indexes = tf.range(0, tf.size(actions))
         stacked_actions = tf.stack([indexes, actions], axis=1)
         policy_action = tf.gather_nd(indices=stacked_actions, params=policy)
-        advantage = tf.stop_gradient(G - critic_value)
-        policy_loss = -tf.math.reduce_mean(advantage * (tf.math.log(policy_action)))
-        error = G - critic_value
-        value_loss = tf.math.reduce_mean(error ** 2)
-        entropy = -tf.math.reduce_sum(policy * tf.math.log(policy))
+        advantage = G - critic_value
+        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
+        value_loss = tf.math.reduce_mean(advantage ** 2)
+        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(policy), 1))
         policy_entropy = -tf.math.reduce_mean(entropy)
-        loss = policy_loss + 0.5 * value_loss + 0.005 * policy_entropy
+        loss = policy_loss + self.value_const * value_loss + self.entropie_const * policy_entropy
         return loss
 
     @staticmethod
@@ -68,7 +66,7 @@ class A2C_PolicyGradient:
         model = Model(inputs=inputs,
                       outputs=prediction,
                       name='A2C')
-        model.compile(loss=A2C_PolicyGradient.custom_loss1, optimizer=RMSprop(learning_rate=self.learning_rate))
+        model.compile(loss=self.custom_loss1, optimizer=RMSprop(learning_rate=self.learning_rate))
         # model.summary()
         return model
 
