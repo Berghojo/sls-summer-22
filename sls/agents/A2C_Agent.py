@@ -13,11 +13,11 @@ class A2C_Agent(AbstractAgent):
         self.last_state = None
         self.last_action = None
         self.decay_episodes = 500
-        self.mini_batch = State_Batch()
+        self.sar_batch = State_Batch()
         self.value = 0
         self.neg_reward = -0.01
         self.pos_reward = 1
-        self.mini_batch_size = 64
+        self.n_step_return = 5
         self.a2c = A2C_PolicyGradient(self._DIRECTIONS, train)
 
     def step(self, obs):
@@ -28,23 +28,25 @@ class A2C_Agent(AbstractAgent):
             beacon_coords = self._get_unit_pos(beacon)
             if marine is None:
                 return self._NO_OP
-
             state = self.get_state(obs)
             reward = self.pos_reward if obs.reward == 1 else self.neg_reward
             done = obs.reward == 1 or obs.last()
+
             if self.last_state is not None and self.train:
-                self.mini_batch.add_step(self.last_state, self.last_action, reward, self.value)
+                self.sar_batch.add_step(self.last_state, self.last_action, reward, self.value)
+
             direction, self.value = self.a2c.choose_action(state)
-            if self.train and (len(self.mini_batch.states) >= self.mini_batch_size):
-                self.a2c.learn(self.mini_batch)
-                self.mini_batch.clear()
+            self.last_action = direction
+            self.last_state = state
+
             if done and self.train:
+                self.a2c.add_last_to_batch(self.sar_batch)
+                self.sar_batch.clear()
                 self.last_action = None
                 self.last_state = None
-            else:
-                self.last_action = direction
-                self.last_state = state
-
+            if self.train and (len(self.sar_batch.states) >= self.n_step_return+1):
+                self.a2c.add_to_batch(self.sar_batch)
+                self.sar_batch.pop(0)
             return self._dir_to_sc2_action(direction, marine_coords)
         else:
             return self._SELECT_ARMY

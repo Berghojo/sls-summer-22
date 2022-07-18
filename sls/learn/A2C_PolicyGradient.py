@@ -17,6 +17,8 @@ class A2C_PolicyGradient:
         self.entropie_const = 0.005
         self.learning_rate = 0.0007
         # TODO: clean up
+        self.mini_batch = []
+        self.mini_batch_size = 64
         self.gamma = 0.99
         self.actions = list(actions.keys())
         self.epsilon = 1
@@ -40,8 +42,8 @@ class A2C_PolicyGradient:
         policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
         value_loss = tf.math.reduce_mean(advantage ** 2)
         entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(policy), 1))
-        policy_entropy = -tf.math.reduce_mean(entropy)
-        loss = policy_loss + self.value_const * value_loss + self.entropie_const * policy_entropy
+        entropy_loss = -tf.math.reduce_mean(entropy)
+        loss = policy_loss + self.value_const * value_loss + self.entropie_const * entropy_loss
         return loss
 
     @staticmethod
@@ -74,26 +76,39 @@ class A2C_PolicyGradient:
         s = s.reshape([-1, 16, 16, 1])
         prediction = self.model.predict(s)
         action_dist, value = prediction[0, :-1], prediction[0, 8]
+        if np.any(action_dist <= 0):
+            print('dist', action_dist)
         action_id = np.random.choice(range(len(action_dist)), p=action_dist)
         action = self.actions[action_id]
         return action, value
 
-    def learn(self, episode):
-        episode_len = len(episode.states)
-        if episode_len == 0:
-            return
-        G = []
-        for t in range(episode_len):
+    def add_to_batch(self, sar_batch):
+        value = 0
+        for k in range(0, self.n_step_return):
+            value += (self.gamma ** k) * sar_batch.rewards[k]
+        value += (self.gamma ** self.n_step_return) * sar_batch.values[self.n_step_return]
+        self.mini_batch.append([sar_batch.states[0], value, self.actions.index(sar_batch.actions[0])])
+        if len(self.mini_batch) == self.mini_batch_size:
+            self.learn()
+            self.mini_batch = []
+
+    def add_last_to_batch(self, sar_batch):
+        for idx, el in enumerate(sar_batch.states):
             value = 0
-            upper_bound = min(t + self.n_step_return, episode_len)
-            for k in range(t, upper_bound):
-                # TODO: Maybe 1 step short?
-                value += (self.gamma ** (k - t)) * episode.rewards[k]
-                if k+1 < len(episode.values) and k+1 == t + self.n_step_return:
-                    value += (self.gamma ** self.n_step_return) * episode.values[k+1]
-            G.append([value, self.actions.index(episode.actions[t])])
-        # update table
-        self.model.fit(np.array(episode.states), np.array(G), verbose=self.verbose, batch_size=None)
+            for k in range(0, len(sar_batch.states) - idx):
+                if k == self.n_step_return:
+                    value += (self.gamma ** self.n_step_return) * sar_batch.values[self.n_step_return]
+                else:
+                    value += (self.gamma ** k) * sar_batch.rewards[k + idx]
+            self.mini_batch.append([sar_batch.states[idx], value, self.actions.index(sar_batch.actions[idx])])
+            if len(self.mini_batch) == self.mini_batch_size:
+                self.learn()
+                self.mini_batch = []
+
+    def learn(self):
+        states = [el[0] for el in self.mini_batch]
+        G = [[el[1], el[2]] for el in self.mini_batch]
+        self.model.fit(np.array(states), np.array(G), verbose=self.verbose, batch_size=None)
         self.counter += 1
         self.verbose = 0
         if self.counter % 200 == 0:

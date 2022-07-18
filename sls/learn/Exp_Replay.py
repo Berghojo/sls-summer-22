@@ -60,6 +60,12 @@ class State_Batch:
         self.rewards.append(reward)
         self.values.append(value)
 
+    def pop(self, index):
+        self.states.pop(index)
+        self.actions.pop(index)
+        self.rewards.pop(index)
+        self.values.pop(index)
+
     def clear(self):
         self.states = []
         self.actions = []
