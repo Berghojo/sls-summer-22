@@ -90,5 +90,6 @@ class Runner:
                         self.agent.update_epsilon(episodes)
                     break
                 obs = self.env.step(action)
+
                 self.score += obs.reward
             self.summarize()

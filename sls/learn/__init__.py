@@ -5,3 +5,4 @@ from .DuelingDeepQNetwork import DuelingDeepQNetwork
 from .CNNDuelingDDQNPrioritized import CNNDuelingDDQNPrioritize
 from .PolicyGradient import PolicyGradient
 from .A2C_PolicyGradient import A2C_PolicyGradient
+from .A2C_FC_PolicyGradient import A2C_FC_PolicyGradient

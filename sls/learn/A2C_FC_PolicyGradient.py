@@ -3,12 +3,12 @@ import tensorflow as tf
 import datetime
 import os
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten, Input
+from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten, Input, Softmax
 from tensorflow.keras.optimizers import RMSprop
 import random
 
 
-class A2C_PolicyGradient:
+class A2C_FC_PolicyGradient:
 
     def __init__(self, actions, train):
         # Definitions
@@ -20,8 +20,6 @@ class A2C_PolicyGradient:
         self.mini_batch = []
         self.mini_batch_size = 64
         self.gamma = 0.99
-        self.actions = list(actions.keys())
-        self.epsilon = 1
         self.verbose = 1
         self.counter = 0
         self.train = train
@@ -32,7 +30,7 @@ class A2C_PolicyGradient:
             self.load_model_weights(path)
         self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
-    def custom_loss1(self, advantage_action, model_output):
+    def custom_loss(self, advantage_action, model_output):
         G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
         policy, critic_value = model_output[:, :-1], model_output[:, -1]
         indexes = tf.range(0, tf.size(actions))
@@ -46,41 +44,37 @@ class A2C_PolicyGradient:
         loss = policy_loss + self.value_const * value_loss + self.entropie_const * entropy_loss
         return loss
 
-    @staticmethod
-    def custom_loss(G_action, policy_distribution):
-        G, actions = G_action[:, 0], tf.cast(G_action[:, 1], tf.int32)
-        indexes = tf.range(0, tf.size(actions))
-        stacked_actions = tf.stack([indexes, actions], axis=1)
-        policy_action = tf.gather_nd(indices=stacked_actions, params=policy_distribution)
-        loss = (-tf.math.log(policy_action)) * G
-        mean_loss = tf.math.reduce_mean(loss)
-        return mean_loss
-
     def create_model(self):
         inputs = Input(shape=(16, 16, 1), name="img")
         l1 = Conv2D(16, (5, 5), strides=1, padding="same", activation="relu")(inputs)
         l2 = Conv2D(32, (3, 3), strides=1, padding="same", activation="relu")(l1)
-        l3 = Flatten()(l2)
-        x = Dense(128, activation="relu")(l3)
-        actor = Dense(8, activation="softmax", name="actor_out")(x)
-        critic = Dense(1, activation="linear", name="critic_out")(x)
+
+        actor_conv = Conv2D(1, (1, 1), strides=1, padding="same", activation="linear")(l2)
+        actor_flatten = Flatten()(actor_conv)
+        #test_fc_layer = Dense(256, activation="relu")(actor_flatten)
+        actor = Softmax(name='softmax_actor')(actor_flatten)
+        #actor = Dense(256, activation='softmax')(actor_flatten)
+        #actor = Dense(8, activation="softmax", name="actor_test")(test_fc_layer)
+
+        critic_flatten = Flatten()(l2)
+        fc_layer = Dense(256, activation="relu")(critic_flatten)
+        #actor_test = Dense(256, activation="softmax", name="actor_out")(fc_layer)
+        critic = Dense(1, activation="linear", name="critic_out")(fc_layer)
         prediction = tf.concat([actor, critic], 1)
         model = Model(inputs=inputs,
                       outputs=prediction,
                       name='A2C')
-        model.compile(loss=self.custom_loss1, optimizer=RMSprop(learning_rate=self.learning_rate))
+        model.compile(loss=self.custom_loss, optimizer=RMSprop(learning_rate=self.learning_rate))
         # model.summary()
         return model
 
     def choose_action(self, s):
         s = s.reshape([-1, 16, 16, 1])
         prediction = self.model.predict(s)
+
         action_dist, value = prediction[0, :-1], prediction[0, -1]
-        if np.any(action_dist <= 0):
-            print('dist', action_dist)
-        action_id = np.random.choice(range(len(action_dist)), p=action_dist)
-        action = self.actions[action_id]
-        return action, value
+        direction_key = np.random.choice(range(len(action_dist)), p=action_dist)
+        return direction_key, value
 
     def add_to_batch(self, sar_batch):
         value = 0
