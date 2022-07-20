@@ -1,40 +1,16 @@
-from absl import app
-from sls import Env, Runner
-from sls.agents import *
+import time
 
 from absl import app
+from numpy.random import random
+
 from sls import Env, Runner
+from multiprocessing import Process
 from sls.agents import *
 
-
-
-def worker_fkt(child_conn, a2c, _CONFIG, ):
-    agent = _CONFIG['agent'](
-        train=_CONFIG['train'],
-        screen_size=_CONFIG['screen_size'],
-        connection=child_conn,
-        a2c=a2c
-    )
-
-    env = Env(
-        screen_size=_CONFIG['screen_size'],
-        minimap_size=_CONFIG['minimap_size'],
-        visualize=_CONFIG['visualize']
-    )
-
-    runner = Runner(
-        agent=agent,
-        env=env,
-        train=_CONFIG['train'],
-        load_path=_CONFIG['load_path']
-    )
-
-    runner.run(episodes=_CONFIG['episodes'])
-
-
-class A2C_Worker:
+class A2C_Worker(Process):
 
     def __init__(self, _CONFIG, connection, a2c):
+        super(A2C_Worker, self).__init__()
         self.a2c = a2c
         self.connection = connection
         self._CONFIG = _CONFIG
@@ -57,7 +33,7 @@ class A2C_Worker:
             train=self._CONFIG['train'],
             load_path=self._CONFIG['load_path']
         )
-        self.run()
+        self.counter=0
 
     def run(self):
         while True:
@@ -80,4 +56,6 @@ class A2C_Worker:
         # receive NET
         # do step
         # send Update
-        print("step")
+        self.counter += 1
+        self.connection.send(("did step " + str(self.counter)))
+        time.sleep(random())

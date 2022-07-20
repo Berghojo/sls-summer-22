@@ -1,10 +1,12 @@
+import time
+
 from absl import app
 from sls import Env, Runner
 from sls.agents import *
 
 from sls.learn import A2C_PolicyGradient
 from multiprocessing import Process, Pipe
-from sls.worker import worker_fkt
+from sls.worker import A2C_Worker
 
 _CONFIG = dict(
     episodes=10,
@@ -41,24 +43,14 @@ def main(unused_argv):
         parent_conn, child_conn = Pipe()
         p_conns.append(parent_conn)
         c_conns.append(child_conn)
-        workers_process.append(Process(target=worker_fkt, args=(child_conn, a2c, _CONFIG)))
-    ##runner forloop
-        # reset
-        for worker in workers:
-            worker.reset
-        # send
-        for conn in p_conns:
-            print(conn.recv())
-        # step
-        for worker in workers:
-            worker.start()
-        # join
-        for worker in workers:
-            worker.join()
-        # receive
-        for conn in p_conns:
-            print(conn.recv())
-
+        workers_process.append(A2C_Worker(_CONFIG, child_conn, a2c))
+    for p in workers_process:
+        p.start()
+    while True:
+        for out_conn in p_conns:
+            out_conn.send("STEP")
+        for in_conn in p_conns:
+            print("recv: ", in_conn.recv())
 
     print("finished")
 
