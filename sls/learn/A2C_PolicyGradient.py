@@ -25,7 +25,7 @@ class A2C_PolicyGradient:
         self.counter = 0
         self.train = train
         self.input_dim = 2
-        self.model = self.create_model()
+        #self.model = self.create_model()
         if not self.train:
             path = 'models/abgabe05_aufgabe01_model_weights.h5'
             self.load_model_weights(path)

@@ -1,6 +1,6 @@
 from sls.agents import AbstractAgent
-from sls.learn import ExperienceReplay, A2C_PolicyGradient, State_Batch
-
+from sls.learn import ExperienceReplay, State_Batch, A2C_PolicyGradient
+from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten, Input
 import tensorflow as tf
 import numpy as np
 
@@ -17,7 +17,6 @@ class A2C_Agent(AbstractAgent):
         self.sar_batch = State_Batch()
         self.connection = connection
         self.a2c = A2C_PolicyGradient(train)
-        self.a2c_net = self.a2c.create_model()
         self.actions = list(self._DIRECTIONS.keys())
         self.value = 0
         self.neg_reward = -0.01
@@ -66,14 +65,15 @@ class A2C_Agent(AbstractAgent):
             return self._SELECT_ARMY
 
     def choose_action(self, s):
-        s = s.reshape([-1, 16, 16, 1])
-        prediction = self.a2c_net.predict(s)
-        action_dist, value = prediction[0, :-1], prediction[0, -1]
-        if np.any(action_dist <= 0):
-            print('dist', action_dist)
-        action_id = np.random.choice(range(len(action_dist)), p=action_dist)
-        action = self.actions[action_id]
-        return action, value
+        # s = s.reshape([-1, 16, 16, 1])
+        # prediction = self.a2c_net.predict(s)
+        # action_dist, value = prediction[0, :-1], prediction[0, -1]
+        # if np.any(action_dist <= 0):
+        #     print('dist', action_dist)
+        # action_id = np.random.choice(range(len(action_dist)), p=action_dist)
+        # action = self.actions[action_id]
+        # return action, value
+        return 'S', 1
 
     def get_state(self, obs):
         return np.array(obs.observation.feature_screen.unit_density.reshape([self.screen_size, self.screen_size, 1]))
