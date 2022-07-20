@@ -3,7 +3,7 @@ import time
 from absl import app
 from sls import Env, Runner
 from sls.agents import *
-
+from tensorflow import keras
 from sls.learn import A2C_PolicyGradient
 from multiprocessing import Process, Pipe
 from sls.worker import A2C_Worker
@@ -35,21 +35,28 @@ def main(unused_argv):
         parent_conn, child_conn = Pipe()
         p_conns.append(parent_conn)
         c_conns.append(child_conn)
-        workers_process.append(A2C_Worker(id, _CONFIG, child_conn, a2c.model))
+        workers_process.append(A2C_Worker(id, _CONFIG, child_conn))
+    print(len(p_conns), len(c_conns), 'Connections')
     for p in workers_process:
         p.start()
+    for in_conn in p_conns:
+        print('receive_start')
+        in_conn.recv()
     while episode <= _CONFIG['episodes']:
         for out_conn in p_conns:
             out_conn.send(["RESET"])
-
+        for in_conn in p_conns:
+            print('receive_reset')
+            in_conn.recv()
         while True:
             for out_conn in p_conns:
                 out_conn.send(["STEP"])
             worker_done = []
             for in_conn in p_conns:
+                print('waiting for rec', in_conn)
                 sar_batch, done, last = in_conn.recv()
                 worker_done.append(last)
-                if _CONFIG['train']:
+                if _CONFIG['train'] and sar_batch is not None:
                     if done:
                         a2c.add_last_to_batch(sar_batch)
                     else:
