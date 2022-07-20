@@ -83,7 +83,6 @@ class Runner:
             while True:
                 action = self.agent.step(obs)
                 if obs.last():
-
                     if isinstance(self.agent, SARSA_Agent) and self.train:
                         self.agent.update_temp(episodes)
                     elif not isinstance(self.agent, BasicAgent) and self.train:

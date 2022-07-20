@@ -6,7 +6,7 @@ import numpy as np
 
 class A2C_Agent(AbstractAgent):
 
-    def __init__(self, train, screen_size, connection, a2c):
+    def __init__(self, train, screen_size, connection, a2c_net):
         tf.compat.v1.disable_eager_execution()
         super(A2C_Agent, self).__init__(screen_size)
         self.train = train
@@ -15,11 +15,12 @@ class A2C_Agent(AbstractAgent):
         self.decay_episodes = 500
         self.sar_batch = State_Batch()
         self.connection = connection
+        self.actions = list(self._DIRECTIONS.keys())
         self.value = 0
         self.neg_reward = -0.01
         self.pos_reward = 1
         self.n_step_return = 5
-        self.a2c = a2c
+        self.a2c_net = a2c_net
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
@@ -36,43 +37,33 @@ class A2C_Agent(AbstractAgent):
             if self.last_state is not None and self.train:
                 self.sar_batch.add_step(self.last_state, self.last_action, reward, self.value)
 
-            direction, self.value = self.a2c.choose_action(state)
+            direction, self.value = self.choose_action(state)
             self.last_action = list(self._DIRECTIONS.keys()).index(direction)
             self.last_state = state
 
             if done and self.train:
-                self.connection.send([self.sar_batch, done])
+                self.connection.send([self.sar_batch, done, obs.last()])
                 self.sar_batch.clear()
                 self.last_action = None
                 self.last_state = None
-            if self.train and (len(self.sar_batch.states) >= self.n_step_return+1):
+            elif self.train and (len(self.sar_batch.states) >= self.n_step_return+1):
                 #self.a2c.add_to_batch(self.sar_batch)
-                self.connection.send([self.sar_batch, done])
+                self.connection.send([self.sar_batch, done, obs.last()])
                 self.sar_batch.pop(0)
 
             return self._dir_to_sc2_action(direction, marine_coords)
         else:
             return self._SELECT_ARMY
 
+    def choose_action(self, s):
+        s = s.reshape([-1, 16, 16, 1])
+        prediction = self.a2c.predict(s)
+        action_dist, value = prediction[0, :-1], prediction[0, -1]
+        if np.any(action_dist <= 0):
+            print('dist', action_dist)
+        action_id = np.random.choice(range(len(action_dist)), p=action_dist)
+        action = self.actions[action_id]
+        return action, value
+
     def get_state(self, obs):
         return np.array(obs.observation.feature_screen.unit_density.reshape([self.screen_size, self.screen_size, 1]))
-
-    def update_target_model(self):
-        print('reset networks')
-        self.a2c.reset_q()
-
-    def save_model(self, path):
-        self.a2c.save_model_weights(path)
-
-    def load_model(self, filename):
-        self.a2c.load_model_weights(filename)
-
-    def update_epsilon(self, episodes):
-        epsilon = self.a2c.epsilon - (0.95 / self.decay_episodes)
-        if epsilon < 0.05:
-            epsilon = 0.05
-        # update epsilon
-        self.a2c.epsilon = epsilon
-
-    def get_epsilon(self):
-        return self.a2c.epsilon

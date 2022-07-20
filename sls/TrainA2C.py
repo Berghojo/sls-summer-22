@@ -19,39 +19,46 @@ _CONFIG = dict(
 )
 
 _Worker = 2
-_DIRECTIONS = {'N': [0, -1],
-               'NE': [1, -1],
-               'E': [1, 0],
-               'SE': [1, 1],
-               'S': [0, 1],
-               'SW': [-1, 1],
-               'W': [-1, 0],
-               'NW': [-1, -1]}
-
+episode = 0
 
 def main(unused_argv):
     workers = []
     workers_process = []
-    a2c = A2C_PolicyGradient(_DIRECTIONS, _CONFIG['train'])
+    a2c = A2C_PolicyGradient(_CONFIG['train'])
     p_conns, c_conns = [], []
     ## init workers
 
     # for _ in range(_Worker):
     #    worker.append(A2C_Worker(_CONFIG))
 
-    for _ in range(_Worker):
+    for id in range(_Worker):
         parent_conn, child_conn = Pipe()
         p_conns.append(parent_conn)
         c_conns.append(child_conn)
-        workers_process.append(A2C_Worker(_CONFIG, child_conn, a2c))
+        workers_process.append(A2C_Worker(id, _CONFIG, child_conn, a2c.model))
     for p in workers_process:
         p.start()
-    while True:
+    while episode <= _CONFIG['episodes']:
         for out_conn in p_conns:
-            out_conn.send("STEP")
-        for in_conn in p_conns:
-            print("recv: ", in_conn.recv())
+            out_conn.send(["RESET"])
 
+        while True:
+            for out_conn in p_conns:
+                out_conn.send(["STEP"])
+            worker_done = []
+            for in_conn in p_conns:
+                sar_batch, done, last = in_conn.recv()
+                worker_done.append(last)
+                if _CONFIG['train']:
+                    if done:
+                        a2c.add_last_to_batch(sar_batch)
+                    else:
+                        a2c.add_to_batch(sar_batch)
+            if any(worker_done): #all worker should finish at the same time
+                break
+
+#         self.score += obs.reward
+#        self.summarize()
     print("finished")
 
 

@@ -10,7 +10,7 @@ import random
 
 class A2C_PolicyGradient:
 
-    def __init__(self, actions, train):
+    def __init__(self, train):
         # Definitions
         self.n_step_return = 5
         self.value_const = 0.5
@@ -20,7 +20,6 @@ class A2C_PolicyGradient:
         self.mini_batch = []
         self.mini_batch_size = 64
         self.gamma = 0.99
-        self.actions = list(actions.keys())
         self.epsilon = 1
         self.verbose = 1
         self.counter = 0
@@ -71,16 +70,6 @@ class A2C_PolicyGradient:
         model.compile(loss=self.custom_loss1, optimizer=RMSprop(learning_rate=self.learning_rate))
         # model.summary()
         return model
-
-    def choose_action(self, s):
-        s = s.reshape([-1, 16, 16, 1])
-        prediction = self.model.predict(s)
-        action_dist, value = prediction[0, :-1], prediction[0, -1]
-        if np.any(action_dist <= 0):
-            print('dist', action_dist)
-        action_id = np.random.choice(range(len(action_dist)), p=action_dist)
-        action = self.actions[action_id]
-        return action, value
 
     def add_to_batch(self, sar_batch):
         value = 0
