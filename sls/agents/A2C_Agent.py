@@ -6,7 +6,7 @@ import numpy as np
 
 class A2C_Agent(AbstractAgent):
 
-    def __init__(self, train, screen_size):
+    def __init__(self, train, screen_size, connection, a2c):
         tf.compat.v1.disable_eager_execution()
         super(A2C_Agent, self).__init__(screen_size)
         self.train = train
@@ -14,11 +14,12 @@ class A2C_Agent(AbstractAgent):
         self.last_action = None
         self.decay_episodes = 500
         self.sar_batch = State_Batch()
+        self.connection = connection
         self.value = 0
         self.neg_reward = -0.01
         self.pos_reward = 1
         self.n_step_return = 5
-        self.a2c = A2C_PolicyGradient(self._DIRECTIONS, train)
+        self.a2c = a2c
 
     def step(self, obs):
         if self._MOVE_SCREEN.id in obs.observation.available_actions:
@@ -40,12 +41,13 @@ class A2C_Agent(AbstractAgent):
             self.last_state = state
 
             if done and self.train:
-                self.a2c.add_last_to_batch(self.sar_batch)
+                self.connection.send([self.sar_batch, done])
                 self.sar_batch.clear()
                 self.last_action = None
                 self.last_state = None
             if self.train and (len(self.sar_batch.states) >= self.n_step_return+1):
-                self.a2c.add_to_batch(self.sar_batch)
+                #self.a2c.add_to_batch(self.sar_batch)
+                self.connection.send([self.sar_batch, done])
                 self.sar_batch.pop(0)
 
             return self._dir_to_sc2_action(direction, marine_coords)
