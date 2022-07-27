@@ -93,7 +93,7 @@ def main(unused_argv):
                         a2c.add_to_batch(sar_batch)
 
             if all(worker_done):
-                summarize(a2c)
+
                 episode += 1
                 score_batch = []
                 if episode <= _CONFIG['episodes']:
@@ -106,6 +106,7 @@ def main(unused_argv):
                     score_batch.append(in_conn.recv())
                 for in_conn in p_conns:
                     in_conn.recv()
+                summarize(a2c)
                 break
     for p in workers_process:
         p.kill()
@@ -118,7 +119,7 @@ def summarize(a2c):
         value=[tf.compat.v1.Summary.Value(tag='Average Worker score', simple_value=mean)]),
         episode)
 
-    print('Mean Score: ', mean, 'in Episode:', episode)
+    print('Mean Score: ', mean, 'in Episode:', episode-1)
     if _CONFIG['train'] and episode % 10 == 0:
         a2c.save_model_weights()
 
