@@ -10,7 +10,7 @@ import random
 
 class A2C_FC_PolicyGradient:
 
-    def __init__(self, actions, train):
+    def __init__(self, train):
         # Definitions
         self.n_step_return = 5
         self.value_const = 0.5
@@ -26,9 +26,9 @@ class A2C_FC_PolicyGradient:
         self.input_dim = 2
         self.model = self.create_model()
         if not self.train:
-            path = 'models/abgabe05_aufgabe01_model_weights.h5'
+            path = 'models/abgabe05_aufgabe02_model_weights.h5'
             self.load_model_weights(path)
-        self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
+        self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
     def custom_loss(self, advantage_action, model_output):
         G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
@@ -51,15 +51,12 @@ class A2C_FC_PolicyGradient:
 
         actor_conv = Conv2D(1, (1, 1), strides=1, padding="same", activation="linear")(l2)
         actor_flatten = Flatten()(actor_conv)
-        #test_fc_layer = Dense(256, activation="relu")(actor_flatten)
         actor = Softmax(name='softmax_actor')(actor_flatten)
-        #actor = Dense(256, activation='softmax')(actor_flatten)
-        #actor = Dense(8, activation="softmax", name="actor_test")(test_fc_layer)
 
         critic_flatten = Flatten()(l2)
         fc_layer = Dense(256, activation="relu")(critic_flatten)
-        #actor_test = Dense(256, activation="softmax", name="actor_out")(fc_layer)
         critic = Dense(1, activation="linear", name="critic_out")(fc_layer)
+
         prediction = tf.concat([actor, critic], 1)
         model = Model(inputs=inputs,
                       outputs=prediction,
@@ -69,12 +66,16 @@ class A2C_FC_PolicyGradient:
         return model
 
     def choose_action(self, s):
-        s = s.reshape([-1, 16, 16, 1])
+        s = np.array(s).reshape([-1, 16, 16, 1])
         prediction = self.model.predict(s)
-
-        action_dist, value = prediction[0, :-1], prediction[0, -1]
-        direction_key = np.random.choice(range(len(action_dist)), p=action_dist)
-        return direction_key, value
+        action_dists, values = prediction[:, :-1], prediction[:, -1]
+        if np.any(action_dists <= 0):
+            print('dist', action_dists)
+        actions = []
+        for a in action_dists:
+            action_id = np.random.choice(range(len(a)), p=a)
+            actions.append(action_id)
+        return np.array(actions), values
 
     def add_to_batch(self, sar_batch):
         value = 0
@@ -108,8 +109,8 @@ class A2C_FC_PolicyGradient:
         if self.counter % 200 == 0:
             self.verbose = 1
 
-    def save_model_weights(self, path):
-        filename = path + self.exportfile
+    def save_model_weights(self):
+        filename = self.exportfile
         self.model.save_weights(filename)
         print('saved')
 

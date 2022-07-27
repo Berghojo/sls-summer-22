@@ -63,19 +63,3 @@ class A2C_FC_Agent(AbstractAgent):
 
     def get_state(self, obs):
         return np.array(obs.observation.feature_screen.unit_density.reshape([self.screen_size, self.screen_size, 1]))
-
-    def update_target_model(self):
-        print('reset networks')
-        self.a2c.reset_q()
-
-    def save_model(self, path):
-        self.a2c.save_model_weights(path)
-
-    def load_model(self, filename):
-        self.a2c.load_model_weights(filename)
-
-    def update_epsilon(self, episodes):
-        pass
-
-    def get_epsilon(self):
-        pass

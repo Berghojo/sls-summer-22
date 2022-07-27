@@ -7,6 +7,7 @@ from sls import Env, Runner
 from multiprocessing import Process
 from sls.agents import *
 
+
 class A2C_Worker(Process):
 
     def __init__(self, worker_id, _CONFIG, connection):
@@ -17,7 +18,7 @@ class A2C_Worker(Process):
         self._CONFIG = _CONFIG
         self.agent = None
         self.env = None
-        self.counter=0
+        self.counter = 0
         self.score = 0
 
     def startup(self):
@@ -48,10 +49,16 @@ class A2C_Worker(Process):
                 self.score = 0
                 self.connection.send('RDY')
             elif recv_msg[0] == "CLOSE":
+                print("Worker ", self.id, " is closing")
+                self.connection.send(self.score)
+                self.score = 0
+                self.connection.send('RDY')
                 self.close_env()
                 break
             else:
                 print("UNKNOWN Message: ", recv_msg[0])
+        print("Worker ", self.id, " closed")
+        return
 
     def reset_env(self):
         self.obs = self.env.reset()

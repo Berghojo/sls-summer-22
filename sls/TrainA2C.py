@@ -30,7 +30,7 @@ writer = tf.compat.v1.summary.FileWriter(path, tf.compat.v1.get_default_graph())
 ospath = os.path.isfile(_CONFIG['load_path'])
 
 _Worker = 8
-episode = 0
+episode = 1
 score_batch = [0] * _Worker
 worker_done = []
 
@@ -64,8 +64,7 @@ def main(unused_argv):
     for in_conn in p_conns:
         in_conn.recv()
     while episode <= _CONFIG['episodes']:
-        episode_finished = False
-        while not episode_finished:
+        while True:
             worker_done = []
             for out_conn in p_conns:
                 out_conn.send(["STEP"])
@@ -97,17 +96,20 @@ def main(unused_argv):
                 summarize(a2c)
                 episode += 1
                 score_batch = []
-                for out_conn in p_conns:
-                    out_conn.send(["RESET"])
+                if episode <= _CONFIG['episodes']:
+                    for out_conn in p_conns:
+                        out_conn.send(["RESET"])
+                else:
+                    for out_conn in p_conns:
+                        out_conn.send(["CLOSE"])
                 for in_conn in p_conns:
                     score_batch.append(in_conn.recv())
                 for in_conn in p_conns:
                     in_conn.recv()
-                episode_finished = True
-
-            #         self.score += obs.reward
-
-
+                break
+    for p in workers_process:
+        p.kill()
+    print("killed")
 
 def summarize(a2c):
     global episode

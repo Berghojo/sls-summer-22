@@ -3,14 +3,14 @@ import datetime
 from absl import app
 from sls.agents import *
 from tensorflow import keras
-from sls.learn import A2C_PolicyGradient
+from sls.learn import A2C_FC_PolicyGradient
 from multiprocessing import Process, Pipe
 from sls.worker import A2C_Worker
 import tensorflow as tf
 import numpy as np
 
 _CONFIG = dict(
-    episodes=10,
+    episodes=10000,
     screen_size=16,
     minimap_size=64,
     visualize=True,
@@ -30,8 +30,8 @@ writer = tf.compat.v1.summary.FileWriter(path, tf.compat.v1.get_default_graph())
 ospath = os.path.isfile(_CONFIG['load_path'])
 
 _Worker = 8
-episode = 0
-score_batch = []
+episode = 1
+score_batch = [0] * _Worker
 worker_done = []
 
 def main(unused_argv):
@@ -40,7 +40,7 @@ def main(unused_argv):
     global episode
     global score_batch
     workers_process = []
-    a2c = A2C_PolicyGradient(_CONFIG['train'])
+    a2c = A2C_FC_PolicyGradient(_CONFIG['train'])
     if not _CONFIG['train'] and _CONFIG['load_path'] is not None and os.path.isfile(_CONFIG['load_path']):
         a2c.load_model_weights(_CONFIG['load_path'])
     p_conns, c_conns = [], []
@@ -64,8 +64,7 @@ def main(unused_argv):
     for in_conn in p_conns:
         in_conn.recv()
     while episode <= _CONFIG['episodes']:
-        episode_finished = False
-        while not episode_finished:
+        while True:
             worker_done = []
             for out_conn in p_conns:
                 out_conn.send(["STEP"])
@@ -93,21 +92,24 @@ def main(unused_argv):
                     else:
                         a2c.add_to_batch(sar_batch)
 
-            if all(worker_done):  # all worker should finish at the same time
+            if all(worker_done):
                 summarize(a2c)
                 episode += 1
                 score_batch = []
-                for out_conn in p_conns:
-                    out_conn.send(["RESET"])
+                if episode <= _CONFIG['episodes']:
+                    for out_conn in p_conns:
+                        out_conn.send(["RESET"])
+                else:
+                    for out_conn in p_conns:
+                        out_conn.send(["CLOSE"])
                 for in_conn in p_conns:
                     score_batch.append(in_conn.recv())
                 for in_conn in p_conns:
                     in_conn.recv()
-                episode_finished = True
-
-            #         self.score += obs.reward
-
-
+                break
+    for p in workers_process:
+        p.kill()
+    print("killed")
 
 def summarize(a2c):
     global episode
