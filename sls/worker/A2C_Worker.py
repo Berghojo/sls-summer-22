@@ -18,6 +18,7 @@ class A2C_Worker(Process):
         self.agent = None
         self.env = None
         self.counter=0
+        self.score = 0
 
     def startup(self):
         print('creating_agent', self.id)
@@ -42,11 +43,15 @@ class A2C_Worker(Process):
             if recv_msg[0] == "STEP":
                 self.step()
             elif recv_msg[0] == "RESET":
+                self.connection.send(self.score)
                 self.reset_env()
+                self.score = 0
                 self.connection.send('RDY')
             elif recv_msg[0] == "CLOSE":
                 self.close_env()
                 break
+            else:
+                print("UNKNOWN Message: ", recv_msg[0])
 
     def reset_env(self):
         self.obs = self.env.reset()
@@ -55,8 +60,9 @@ class A2C_Worker(Process):
         pass
 
     def step(self):
-        print("updated net on worker: id " + str(self.id))
         action = self.agent.step(self.obs)
-        print("action for worker: id" + str(self.id) + " is: ", action)
-        self.obs = self.env.step(action)
-        print("worker did step: id " + str(self.id))
+        if not self.obs.last():
+            self.obs = self.env.step(action)
+        self.score += self.obs.reward
+        # if self.obs.last():
+        #     print(self.id, ' finished')

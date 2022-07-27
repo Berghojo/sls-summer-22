@@ -38,7 +38,7 @@ class A2C_PolicyGradient:
         if not self.train:
             path = 'models/abgabe05_aufgabe01_model_weights.h5'
             self.load_model_weights(path)
-        self.exportfile = f'{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
+        self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
     def custom_loss1(self, advantage_action, model_output):
         G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
@@ -125,8 +125,8 @@ class A2C_PolicyGradient:
         if self.counter % 200 == 0:
             self.verbose = 1
 
-    def save_model_weights(self, path):
-        filename = path + self.exportfile
+    def save_model_weights(self):
+        filename = self.exportfile
         self.model.save_weights(filename)
         print('saved')
 
