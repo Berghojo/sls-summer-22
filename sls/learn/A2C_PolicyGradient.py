@@ -20,12 +20,21 @@ class A2C_PolicyGradient:
         self.mini_batch = []
         self.mini_batch_size = 64
         self.gamma = 0.99
+        _DIRECTIONS = {'N': [0, -1],
+                       'NE': [1, -1],
+                       'E': [1, 0],
+                       'SE': [1, 1],
+                       'S': [0, 1],
+                       'SW': [-1, 1],
+                       'W': [-1, 0],
+                       'NW': [-1, -1]}
+        self.actions = list(_DIRECTIONS.keys())
         self.epsilon = 1
         self.verbose = 1
         self.counter = 0
         self.train = train
         self.input_dim = 2
-        #self.model = self.create_model()
+        self.model = self.create_model()
         if not self.train:
             path = 'models/abgabe05_aufgabe01_model_weights.h5'
             self.load_model_weights(path)
@@ -94,6 +103,19 @@ class A2C_PolicyGradient:
                 self.learn()
                 self.mini_batch = []
 
+    def choose_action(self, s):
+        s = np.array(s).reshape([-1, 16, 16, 1])
+        prediction = self.model.predict(s)
+        action_dists, values = prediction[:, :-1], prediction[:, -1]
+        if np.any(action_dists <= 0):
+            print('dist', action_dists)
+        actions = []
+        for a in action_dists:
+            action_id = np.random.choice(range(len(a)), p=a)
+            actions.append(self.actions[action_id])
+        return np.array(actions), values
+        #return 'S', 1
+
     def learn(self):
         states = [el[0] for el in self.mini_batch]
         G = [[el[1], el[2]] for el in self.mini_batch]
@@ -112,6 +134,3 @@ class A2C_PolicyGradient:
         if os.path.isfile(filepath):
             print('loaded')
             self.model.load_weights(filepath)
-
-    def reset_q(self):
-        self.target_model.set_weights(self.model.get_weights())

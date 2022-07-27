@@ -20,11 +20,12 @@ class A2C_Worker(Process):
         self.counter=0
 
     def startup(self):
+        print('creating_agent', self.id)
         self.agent = self._CONFIG['agent'](
             train=self._CONFIG['train'],
             screen_size=self._CONFIG['screen_size'],
             connection=self.connection,
-            #a2c_net=self.init_net
+            worker_id=self.id
         )
         print('creating_environment', self.id)
         self.env = Env(
@@ -39,7 +40,7 @@ class A2C_Worker(Process):
         while True:
             recv_msg = self.connection.recv()
             if recv_msg[0] == "STEP":
-                self.step() #TODO change to sended observer
+                self.step()
             elif recv_msg[0] == "RESET":
                 self.reset_env()
                 self.connection.send('RDY')
@@ -55,7 +56,6 @@ class A2C_Worker(Process):
 
     def step(self):
         print("updated net on worker: id " + str(self.id))
-        #self.agent.a2c_net = a2c
         action = self.agent.step(self.obs)
         print("action for worker: id" + str(self.id) + " is: ", action)
         self.obs = self.env.step(action)

@@ -36,25 +36,35 @@ def main(unused_argv):
         p_conns.append(parent_conn)
         c_conns.append(child_conn)
         workers_process.append(A2C_Worker(id, _CONFIG, child_conn))
-    print(len(p_conns), len(c_conns), 'Connections')
     for p in workers_process:
         p.start()
     for in_conn in p_conns:
-        print('receive_start')
         in_conn.recv()
     while episode <= _CONFIG['episodes']:
         for out_conn in p_conns:
             out_conn.send(["RESET"])
         for in_conn in p_conns:
-            print('receive_reset')
             in_conn.recv()
         while True:
             for out_conn in p_conns:
                 out_conn.send(["STEP"])
+            states = [0] * _Worker
+            skip = False
+            for in_conn in p_conns:
+                return_s = in_conn.recv()
+                if return_s == [None, None]:
+                    skip = True
+                    continue
+                worker_id, state = return_s
+                states[worker_id] = state
+            if not skip:
+                actions, values = a2c.choose_action(states)
+                for i, in_conn in enumerate(p_conns):
+                    in_conn.send([actions[i], values[i]])
             worker_done = []
             for in_conn in p_conns:
-                print('waiting for rec', in_conn)
-                sar_batch, done, last = in_conn.recv()
+                recv_2 = in_conn.recv()
+                sar_batch, done, last = recv_2
                 worker_done.append(last)
                 if _CONFIG['train'] and sar_batch is not None:
                     if done:
@@ -66,7 +76,6 @@ def main(unused_argv):
 
 #         self.score += obs.reward
 #        self.summarize()
-    print("finished")
 
 
 if __name__ == "__main__":
