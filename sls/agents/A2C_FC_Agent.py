@@ -39,9 +39,9 @@ class A2C_FC_Agent(AbstractAgent):
             #directions = list(self._DIRECTIONS.keys())
             #direction_key, self.value = self.a2c.choose_action(state)
             self.connection.send([self.id, state])
-            direction_key, self.value = self.connection.recv()
-            pixel = np.divmod(direction_key, self.screen_size)
-            self.last_action = direction_key
+            action_key, self.value = self.connection.recv()
+            pixel = np.divmod(action_key, self.screen_size)
+            self.last_action = action_key
             self.last_state = state
             if done and self.train:
                 self.connection.send([self.sar_batch, done, obs.last()])

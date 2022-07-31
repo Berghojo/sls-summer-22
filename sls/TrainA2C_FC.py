@@ -10,7 +10,7 @@ import tensorflow as tf
 import numpy as np
 
 _CONFIG = dict(
-    episodes=1000,
+    episodes=10000,
     screen_size=16,
     minimap_size=64,
     visualize=True,
@@ -29,7 +29,7 @@ path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
 writer = tf.compat.v1.summary.FileWriter(path, tf.compat.v1.get_default_graph())
 ospath = os.path.isfile(_CONFIG['load_path'])
 
-_Worker = 16
+_Worker = 8
 episode = 1
 score_batch = [0] * _Worker
 worker_done = []
@@ -93,7 +93,6 @@ def main(unused_argv):
                         a2c.add_to_batch(sar_batch)
 
             if all(worker_done):
-
                 episode += 1
                 score_batch = []
                 if episode <= _CONFIG['episodes']:

@@ -3,8 +3,11 @@ import tensorflow as tf
 import datetime
 import os
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten, Input, Softmax
-from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Dense, Lambda, Conv2D, Flatten, Input, Softmax, Activation
+from tensorflow.keras import backend as K
+from tensorflow.keras.optimizers import RMSprop, Adam
 import random
 
 
@@ -25,23 +28,39 @@ class A2C_FC_PolicyGradient:
         self.train = train
         self.input_dim = 2
         self.model = self.create_model()
+        self.build_fit()
         if not self.train:
             path = 'models/abgabe05_aufgabe02_model_weights.h5'
             self.load_model_weights(path)
         self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
-    def custom_loss(self, advantage_action, model_output):
-        G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
-        policy, critic_value = model_output[:, :-1], model_output[:, -1]
+    def build_fit(self):
+        actions = K.placeholder(shape=(
+            None, 256))  # the best action (=1) (from memory)
+        G = K.placeholder(shape=(None, 1))
+        #G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
+        predictions = self.model.output
+        policy, critic_value = predictions[0], predictions[1]
         indexes = tf.range(0, tf.size(actions))
-        stacked_actions = tf.stack([indexes, actions], axis=1)
-        policy_action = tf.gather_nd(indices=stacked_actions, params=policy)
+        # stacked_actions = tf.stack([indexes, actions], axis=1)
+        policy_action = actions
+        clipped_policy_action = tf.clip_by_value(policy_action, 1e-5, 1 - 1e-5)
         advantage = G - critic_value
-        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
+        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(clipped_policy_action)))
         value_loss = tf.math.reduce_mean(advantage ** 2)
-        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(policy), 1))
+        clipped_policy = tf.clip_by_value(policy, 1e-5, 1-1e-5)
+        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(clipped_policy), 1))
         entropy_loss = -tf.math.reduce_mean(entropy)
         loss = policy_loss + self.value_const * value_loss + self.entropie_const * entropy_loss
+        optimizer = Adam(lr=self.learning_rate)
+        update = optimizer.get_updates(loss=loss,
+                                       params=self.model.trainable_weights)
+
+        self.fit = K.function(
+            inputs=[self.model.input, actions, G],
+            outputs=[loss],
+            updates=update
+        )
         return loss
 
     def create_model(self):
@@ -51,24 +70,24 @@ class A2C_FC_PolicyGradient:
 
         actor_conv = Conv2D(1, (1, 1), strides=1, padding="same", activation="linear")(l2)
         actor_flatten = Flatten()(actor_conv)
-        actor = Softmax(name='softmax_actor')(actor_flatten)
+        actor = Activation("softmax")(actor_flatten)
 
         critic_flatten = Flatten()(l2)
         fc_layer = Dense(256, activation="relu")(critic_flatten)
-        critic = Dense(1, activation="linear", name="critic_out")(fc_layer)
+        critic = Dense(1, activation="linear", name="critic_out",
+                       kernel_initializer='random_normal')(fc_layer)
 
-        prediction = tf.concat([actor, critic], 1)
         model = Model(inputs=inputs,
-                      outputs=prediction,
+                      outputs=[actor, critic],
                       name='A2C')
-        model.compile(loss=self.custom_loss, optimizer=RMSprop(learning_rate=self.learning_rate))
+        #loss = self.custom_loss(y)
+        ##model.compile(loss=self.custom_loss, optimizer=Adam(learning_rate=self.learning_rate))
         # model.summary()
         return model
 
     def choose_action(self, s):
         s = np.array(s).reshape([-1, 16, 16, 1])
-        prediction = self.model.predict(s)
-        action_dists, values = prediction[:, :-1], prediction[:, -1]
+        action_dists, values = self.model.predict(s)
         if np.any(action_dists <= 0):
             print('dist', action_dists)
         actions = []
@@ -95,15 +114,18 @@ class A2C_FC_PolicyGradient:
                     value += (self.gamma ** self.n_step_return) * sar_batch.values[self.n_step_return]
                 else:
                     value += (self.gamma ** k) * sar_batch.rewards[k + idx]
-            self.mini_batch.append([sar_batch.states[idx], value, sar_batch.actions[idx]])
+            self.mini_batch.append([sar_batch.states[idx], np.array([value]), sar_batch.actions[idx]])
             if len(self.mini_batch) == self.mini_batch_size:
                 self.learn()
                 self.mini_batch = []
 
     def learn(self):
         states = [el[0] for el in self.mini_batch]
-        G = [[el[1], el[2]] for el in self.mini_batch]
-        self.model.fit(np.array(states), np.array(G), verbose=self.verbose, batch_size=None)
+        actions = [el[2] for el in self.mini_batch]
+        hot_act = to_categorical(actions, 256)
+        G = np.array([el[1] for el in self.mini_batch])
+        self.fit([np.array(states), hot_act,G])
+
         self.counter += 1
         self.verbose = 0
         if self.counter % 200 == 0:
