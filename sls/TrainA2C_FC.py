@@ -13,10 +13,10 @@ _CONFIG = dict(
     episodes=10000,
     screen_size=16,
     minimap_size=64,
-    visualize=True,
+    visualize=False,
     train=True,
     agent=A2C_FC_Agent,
-    load_path='./models/abgabe05_aufgabe01_model_weights.h5'
+    load_path='./models/abgabe05_aufgabe01_backumodel_weights.h5'
 )
 
 path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \

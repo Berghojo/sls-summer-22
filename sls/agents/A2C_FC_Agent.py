@@ -36,11 +36,11 @@ class A2C_FC_Agent(AbstractAgent):
 
             if self.last_state is not None and self.train:
                 self.sar_batch.add_step(self.last_state, self.last_action, reward, self.value)
-            #directions = list(self._DIRECTIONS.keys())
-            #direction_key, self.value = self.a2c.choose_action(state)
+            # directions = list(self._DIRECTIONS.keys())
+            # direction_key, self.value = self.a2c.choose_action(state)
             self.connection.send([self.id, state])
             action_key, self.value = self.connection.recv()
-            pixel = np.divmod(action_key, self.screen_size)
+            pixel = np.array([int(action_key % self.screen_size), int(action_key / self.screen_size)])  # np.divmod(action_key, self.screen_size)
             self.last_action = action_key
             self.last_state = state
             if done and self.train:
@@ -55,7 +55,7 @@ class A2C_FC_Agent(AbstractAgent):
                 self.connection.send([None, None, None])
 
             return self._MOVE_SCREEN("now", pixel)
-            #return self._dir_to_sc2_action(directions[direction_key], marine_coords)
+            # return self._dir_to_sc2_action(directions[direction_key], marine_coords)
         else:
             self.connection.send([None, None])
             self.connection.send([None, None, None])

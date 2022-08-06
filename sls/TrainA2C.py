@@ -16,7 +16,6 @@ _CONFIG = dict(
     visualize=True,
     train=True,
     agent=A2C_Agent,
-    load_path='./models/abgabe05_aufgabe01_model_weights.h5'
 )
 
 path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
@@ -27,9 +26,8 @@ path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
 # Tensorflow 2.X mit ausgeschalteter eager_execution
 # Alle weiteren tf.summary Aufrufe müssen durch tf.compat.v1.summary tf.compat.v1.summary ersetzt werden
 writer = tf.compat.v1.summary.FileWriter(path, tf.compat.v1.get_default_graph())
-ospath = os.path.isfile(_CONFIG['load_path'])
 
-_Worker = 16
+_Worker = 8
 episode = 1
 score_batch = [0] * _Worker
 worker_done = []
@@ -41,8 +39,6 @@ def main(unused_argv):
     global score_batch
     workers_process = []
     a2c = A2C_PolicyGradient(_CONFIG['train'])
-    if not _CONFIG['train'] and _CONFIG['load_path'] is not None and os.path.isfile(_CONFIG['load_path']):
-        a2c.load_model_weights(_CONFIG['load_path'])
     p_conns, c_conns = [], []
     ## init workers
 

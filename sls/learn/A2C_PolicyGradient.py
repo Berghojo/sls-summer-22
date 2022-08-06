@@ -36,33 +36,27 @@ class A2C_PolicyGradient:
         self.input_dim = 2
         self.model = self.create_model()
         if not self.train:
-            path = 'models/abgabe05_aufgabe01_model_weights.h5'
+            path = './models/abgabe_blatt05_aufgabe01_backup_model_weights.h5'
             self.load_model_weights(path)
+
         self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
-    def custom_loss1(self, advantage_action, model_output):
+    def custom_loss(self, advantage_action, model_output):
         G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
         policy, critic_value = model_output[:, :-1], model_output[:, -1]
         indexes = tf.range(0, tf.size(actions))
         stacked_actions = tf.stack([indexes, actions], axis=1)
         policy_action = tf.gather_nd(indices=stacked_actions, params=policy)
+        clipped_policy_action = tf.clip_by_value(policy_action, 1e-5, 1 - 1e-5)
         advantage = G - critic_value
-        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
+        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(clipped_policy_action)))
         value_loss = tf.math.reduce_mean(advantage ** 2)
-        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(policy), 1))
+        clipped_policy = tf.clip_by_value(policy, 1e-5, 1 - 1e-5)
+        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(clipped_policy), 1))
         entropy_loss = -tf.math.reduce_mean(entropy)
         loss = policy_loss + self.value_const * value_loss + self.entropie_const * entropy_loss
         return loss
 
-    @staticmethod
-    def custom_loss(G_action, policy_distribution):
-        G, actions = G_action[:, 0], tf.cast(G_action[:, 1], tf.int32)
-        indexes = tf.range(0, tf.size(actions))
-        stacked_actions = tf.stack([indexes, actions], axis=1)
-        policy_action = tf.gather_nd(indices=stacked_actions, params=policy_distribution)
-        loss = (-tf.math.log(policy_action)) * G
-        mean_loss = tf.math.reduce_mean(loss)
-        return mean_loss
 
     def create_model(self):
         inputs = Input(shape=(16, 16, 1), name="img")
@@ -76,7 +70,7 @@ class A2C_PolicyGradient:
         model = Model(inputs=inputs,
                       outputs=prediction,
                       name='A2C')
-        model.compile(loss=self.custom_loss1, optimizer=RMSprop(learning_rate=self.learning_rate))
+        model.compile(loss=self.custom_loss, optimizer=RMSprop(learning_rate=self.learning_rate))
         # model.summary()
         return model
 
@@ -132,5 +126,5 @@ class A2C_PolicyGradient:
 
     def load_model_weights(self, filepath):
         if os.path.isfile(filepath):
-            print('loaded')
             self.model.load_weights(filepath)
+            print('loaded')
