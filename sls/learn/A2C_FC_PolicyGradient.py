@@ -35,22 +35,23 @@ class A2C_FC_PolicyGradient:
         self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
     def build_fit(self):
-        actions = K.placeholder(shape=(
-            None, 256))  # the best action (=1) (from memory)
-        G = K.placeholder(shape=(None, 1))
+        actions = K.placeholder()
+        G = K.placeholder()
         #G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
         predictions = self.model.output
         policy, critic_value = predictions[0], predictions[1]
-        indexes = tf.range(0, tf.size(actions))
+        policy = tf.clip_by_value(policy, 0.00001, 0.99999)
         # stacked_actions = tf.stack([indexes, actions], axis=1)
-        policy_action = actions
+        one_hot = K.one_hot(K.cast(actions, dtype='int32'), 256)
+        policy_action = tf.reduce_sum(one_hot * policy, axis=-1)
         clipped_policy_action = tf.clip_by_value(policy_action, 1e-5, 1 - 1e-5)
-        advantage = G - critic_value
-        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(clipped_policy_action)))
-        value_loss = tf.math.reduce_mean(advantage ** 2)
-        clipped_policy = tf.clip_by_value(policy, 1e-5, 1-1e-5)
-        entropy = tf.math.negative(tf.math.reduce_sum(policy * tf.math.log(clipped_policy), 1))
-        entropy_loss = -tf.math.reduce_mean(entropy)
+        advantage = G - critic_value[:, 0]
+        policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
+
+        value_loss = tf.math.reduce_mean(K.pow(advantage, 2))
+
+        entropy = -1.0 * tf.math.reduce_sum(policy * tf.math.log(policy), -1)
+        entropy_loss = -1.0 * tf.math.reduce_mean(entropy)
         loss = policy_loss + self.value_const * value_loss + self.entropie_const * entropy_loss
         optimizer = Adam(lr=self.learning_rate)
         update = optimizer.get_updates(loss=loss,
@@ -74,8 +75,7 @@ class A2C_FC_PolicyGradient:
 
         critic_flatten = Flatten()(l2)
         fc_layer = Dense(256, activation="relu")(critic_flatten)
-        critic = Dense(1, activation="linear", name="critic_out",
-                       kernel_initializer='random_normal')(fc_layer)
+        critic = Dense(1, activation="linear", name="critic_out")(fc_layer)
 
         model = Model(inputs=inputs,
                       outputs=[actor, critic],
@@ -122,9 +122,9 @@ class A2C_FC_PolicyGradient:
     def learn(self):
         states = [el[0] for el in self.mini_batch]
         actions = [el[2] for el in self.mini_batch]
-        hot_act = to_categorical(actions, 256)
+        #hot_act = to_categorical(actions, 256)
         G = np.array([el[1] for el in self.mini_batch])
-        self.fit([np.array(states), hot_act,G])
+        self.fit([np.array(states), actions, G])
 
         self.counter += 1
         self.verbose = 0
@@ -140,6 +140,3 @@ class A2C_FC_PolicyGradient:
         if os.path.isfile(filepath):
             print('loaded')
             self.model.load_weights(filepath)
-
-    def reset_q(self):
-        self.target_model.set_weights(self.model.get_weights())
