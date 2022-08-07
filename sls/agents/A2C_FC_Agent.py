@@ -52,7 +52,7 @@ class A2C_FC_Agent(AbstractAgent):
                 self.connection.send([self.sar_batch, done, obs.last()])
                 self.sar_batch.pop(0)
             else:
-                self.connection.send([None, None, None])
+                self.connection.send([None, None, obs.last()])
 
             return self._MOVE_SCREEN("now", pixel)
             # return self._dir_to_sc2_action(directions[direction_key], marine_coords)

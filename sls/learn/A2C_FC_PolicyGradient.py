@@ -30,7 +30,7 @@ class A2C_FC_PolicyGradient:
         self.model = self.create_model()
         self.build_fit()
         if not self.train:
-            path = 'models/abgabe05_aufgabe02_model_weights.h5'
+            path = 'models/abgabe_blatt05_aufgabe02.h5'
             self.load_model_weights(path)
         self.exportfile = f'models/{datetime.datetime.now().strftime("%y%m%d_%H%M")}_model_weights.h5'
 
@@ -39,13 +39,13 @@ class A2C_FC_PolicyGradient:
         G = K.placeholder()
         #G, actions = advantage_action[:, 0], tf.cast(advantage_action[:, 1], tf.int32)
         predictions = self.model.output
-        policy, critic_value = predictions[0], predictions[1]
-        policy = tf.clip_by_value(policy, 0.00001, 0.99999)
+        policy, critic_value = predictions[0], tf.reshape(predictions[1], [-1])
+        policy = tf.clip_by_value(policy,  1e-5, 1 - 1e-5)
         # stacked_actions = tf.stack([indexes, actions], axis=1)
         one_hot = K.one_hot(K.cast(actions, dtype='int32'), 256)
         policy_action = tf.reduce_sum(one_hot * policy, axis=-1)
-        clipped_policy_action = tf.clip_by_value(policy_action, 1e-5, 1 - 1e-5)
-        advantage = G - critic_value[:, 0]
+        #clipped_policy_action = tf.clip_by_value(policy_action, 1e-5, 1 - 1e-5)
+        advantage = G - critic_value
         policy_loss = -tf.math.reduce_mean(tf.stop_gradient(advantage) * (tf.math.log(policy_action)))
 
         value_loss = tf.math.reduce_mean(K.pow(advantage, 2))
@@ -87,7 +87,8 @@ class A2C_FC_PolicyGradient:
 
     def choose_action(self, s):
         s = np.array(s).reshape([-1, 16, 16, 1])
-        action_dists, values = self.model.predict(s)
+        prediction = self.model.predict(s)
+        action_dists, values = prediction
         if np.any(action_dists <= 0):
             print('dist', action_dists)
         actions = []
@@ -114,16 +115,16 @@ class A2C_FC_PolicyGradient:
                     value += (self.gamma ** self.n_step_return) * sar_batch.values[self.n_step_return]
                 else:
                     value += (self.gamma ** k) * sar_batch.rewards[k + idx]
-            self.mini_batch.append([sar_batch.states[idx], np.array([value]), sar_batch.actions[idx]])
+            self.mini_batch.append([sar_batch.states[idx], value, sar_batch.actions[idx]])
             if len(self.mini_batch) == self.mini_batch_size:
                 self.learn()
                 self.mini_batch = []
 
     def learn(self):
         states = [el[0] for el in self.mini_batch]
-        actions = [el[2] for el in self.mini_batch]
-        #hot_act = to_categorical(actions, 256)
-        G = np.array([el[1] for el in self.mini_batch])
+        actions = np.array([el[2] for el in self.mini_batch])
+        #hot_act = to_categorical(actions, 256)y
+        G = np.array([el[1] for el in self.mini_batch]).reshape(-1)
         self.fit([np.array(states), actions, G])
 
         self.counter += 1

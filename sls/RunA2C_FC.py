@@ -13,10 +13,10 @@ _CONFIG = dict(
     episodes=5000,
     screen_size=16,
     minimap_size=64,
-    visualize=False,
-    train=True,
+    visualize=True,
+    train=False,
     agent=A2C_FC_Agent,
-    load_path='./models/abgabe05_aufgabe01_backumodel_weights.h5'
+    load_path='./models/abgabe05_aufgabe02_weights.h5'
 )
 
 path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
@@ -29,7 +29,7 @@ path = './graphs/' + datetime.datetime.now().strftime("%y%m%d_%H%M") \
 writer = tf.compat.v1.summary.FileWriter(path, tf.compat.v1.get_default_graph())
 ospath = os.path.isfile(_CONFIG['load_path'])
 
-_Worker = 8
+_Worker = 1
 episode = 1
 score_batch = [0] * _Worker
 worker_done = []
